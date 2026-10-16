@@ -70,12 +70,18 @@ export const LandingScreen: React.FC = () => {
           <span>INTERACTIVE 3D ODYSSEY & CREATIVE PORTFOLIO</span>
         </div>
 
-        <h1 className="font-['Orbitron'] text-4xl sm:text-6xl font-black tracking-tight leading-none mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-cyan-400 drop-shadow-[0_0_35px_rgba(0,240,255,0.4)]">
+        <h1 className="font-['Orbitron'] text-4xl sm:text-6xl font-black tracking-tight leading-none mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-cyan-400 drop-shadow-[0_0_35px_rgba(0,240,255,0.4)]">
           MY UNIVERSE
         </h1>
 
-        <p className="font-['Rajdhani'] text-lg sm:text-xl text-gray-300 mb-8 max-w-xl font-medium leading-relaxed">
-          Embark on a playable orbital expedition. Pilot your exploration vessel across celestial waypoints, unlock project blueprints, inspect telemetry logs, and uncover developer transmissions.
+        <div className="flex items-center gap-2 mb-4 font-['Orbitron'] text-xs sm:text-sm font-bold text-cyan-300 tracking-widest uppercase">
+          <span>ANISHA SAHU</span>
+          <span className="text-gray-500">•</span>
+          <span className="text-purple-300 font-medium">FULL-STACK & AI/ML ENGINEER</span>
+        </div>
+
+        <p className="font-['Rajdhani'] text-base sm:text-lg text-gray-300 mb-8 max-w-xl font-medium leading-relaxed">
+          Embark on an interactive orbital odyssey. Pilot your exploration vessel across celestial outposts to inspect deepfake detection systems, automated content intelligence engines, and engineering telemetry.
         </p>
 
         {/* Start Journey Primary Button */}

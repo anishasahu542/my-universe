@@ -69,3 +69,18 @@ export interface ExperienceItem {
   description: string;
   skills: string[];
 }
+
+export interface EducationItem {
+  degree: string;
+  institution: string;
+  period: string;
+  location?: string;
+  details?: string;
+}
+
+export interface CertificationItem {
+  title: string;
+  issuer: string;
+  year: string;
+  skills: string;
+}

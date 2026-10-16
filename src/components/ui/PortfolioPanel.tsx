@@ -7,6 +7,10 @@ import {
   Send,
   ExternalLink,
   Mail,
+  Phone,
+  MapPin,
+  Award,
+  GraduationCap,
   Copy,
   Check,
   Download,
@@ -36,17 +40,25 @@ export const PortfolioPanel: React.FC = () => {
   const closePanel = useGameStore((s) => s.closePanel);
   const openPanel = useGameStore((s) => s.openPanel);
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const [copiedPhone, setCopiedPhone] = useState(false);
 
   if (activePanel === null || activePanel === 'settings') {
     return null;
   }
 
   const currentTab = activePanel as PortfolioTab | 'controls';
+  const resumeUrl = `${import.meta.env.BASE_URL}Anisha_Sahu_Resume.pdf`;
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(PORTFOLIO_DATA.contact.email);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2000);
+  };
+
+  const handleCopyPhone = () => {
+    navigator.clipboard.writeText(PORTFOLIO_DATA.contact.phone);
+    setCopiedPhone(true);
+    setTimeout(() => setCopiedPhone(false), 2000);
   };
 
   const navTabs: { id: PortfolioTab | 'controls'; label: string; icon: React.ReactNode; color: string }[] = [
@@ -71,7 +83,7 @@ export const PortfolioPanel: React.FC = () => {
                 ODYSSEY ARCHIVE
               </h2>
               <p className="text-[10px] font-mono text-cyan-400 tracking-widest uppercase">
-                Sector 01 Database • Access Level: Authorized
+                Anisha Sahu • Sector 01 Database • Access Authorized
               </p>
             </div>
           </div>
@@ -85,7 +97,7 @@ export const PortfolioPanel: React.FC = () => {
           </button>
         </div>
 
-        {/* Tab Navigation Navigation Bar */}
+        {/* Tab Navigation Bar */}
         <div className="flex overflow-x-auto py-3 gap-2 border-b border-slate-800 shrink-0 scrollbar-none">
           {navTabs.map((t) => (
             <button
@@ -117,6 +129,10 @@ export const PortfolioPanel: React.FC = () => {
                     <p className="text-sm font-['Rajdhani'] font-bold text-cyan-400 uppercase tracking-widest">
                       {PORTFOLIO_DATA.profile.title}
                     </p>
+                    <p className="text-xs font-mono text-gray-400 flex items-center gap-1.5 mt-1">
+                      <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>{PORTFOLIO_DATA.profile.location}</span>
+                    </p>
                   </div>
                   <div className="px-3 py-1 rounded bg-emerald-500/10 border border-emerald-400 text-emerald-300 text-xs font-mono">
                     ● {PORTFOLIO_DATA.profile.status}
@@ -127,19 +143,70 @@ export const PortfolioPanel: React.FC = () => {
                   {PORTFOLIO_DATA.profile.bio}
                 </p>
 
-                <h4 className="text-xs font-mono uppercase tracking-widest text-cyan-300 mb-3 flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Technical Specializations & Stacks</span>
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {PORTFOLIO_DATA.profile.coreSkills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="px-3 py-1.5 rounded-sm bg-slate-900/80 border border-slate-700 text-xs font-mono text-cyan-200"
-                    >
-                      {skill}
-                    </span>
-                  ))}
+                {/* Categorized Skills */}
+                <div className="space-y-4 pt-2 border-t border-slate-800/80">
+                  <h4 className="text-xs font-mono uppercase tracking-widest text-cyan-300 flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Technical Architecture & Stacks</span>
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {PORTFOLIO_DATA.profile.skillCategories.map((group) => (
+                      <div
+                        key={group.category}
+                        className="p-3.5 rounded bg-slate-900/80 border border-slate-800"
+                      >
+                        <div className="text-xs font-bold text-cyan-300 font-['Orbitron'] mb-2">
+                          {group.category}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {group.skills.map((s) => (
+                            <span
+                              key={s}
+                              className="px-2 py-0.5 rounded-sm bg-slate-950/80 border border-cyan-500/20 text-[11px] font-mono text-gray-200"
+                            >
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Languages & Professional Strengths */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4">
+                  <div className="p-3.5 rounded bg-slate-900/80 border border-slate-800">
+                    <div className="text-xs font-bold text-amber-300 font-['Orbitron'] mb-2">
+                      Languages
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-xs font-mono text-gray-300">
+                      {PORTFOLIO_DATA.additionalInfo.languages.map((lang) => (
+                        <span
+                          key={lang.name}
+                          className="px-2.5 py-1 rounded bg-slate-950 border border-slate-800"
+                        >
+                          <strong className="text-white">{lang.name}</strong> ({lang.proficiency})
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded bg-slate-900/80 border border-slate-800">
+                    <div className="text-xs font-bold text-emerald-300 font-['Orbitron'] mb-2">
+                      Professional Strengths
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {PORTFOLIO_DATA.additionalInfo.strengths.map((str) => (
+                        <span
+                          key={str}
+                          className="px-2 py-0.5 rounded bg-slate-950 border border-emerald-500/20 text-[11px] font-mono text-emerald-200"
+                        >
+                          {str}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -186,7 +253,7 @@ export const PortfolioPanel: React.FC = () => {
                       </div>
 
                       <div className="flex gap-2 pt-3 border-t border-slate-800">
-                        {proj.demoUrl && (
+                        {proj.demoUrl && proj.demoUrl !== '#' && (
                           <a
                             href={proj.demoUrl}
                             target="_blank"
@@ -194,7 +261,7 @@ export const PortfolioPanel: React.FC = () => {
                             className="hud-glow-btn flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500 text-xs font-mono text-purple-200 rounded-sm"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
-                            <span>Launch Demo</span>
+                            <span>Launch Space</span>
                           </a>
                         )}
                         {proj.githubUrl && (
@@ -203,6 +270,7 @@ export const PortfolioPanel: React.FC = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hud-glow-btn px-3 flex items-center justify-center py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono text-gray-300 rounded-sm"
+                            title="GitHub Repository"
                           >
                             <GithubIcon className="w-3.5 h-3.5" />
                           </a>
@@ -218,29 +286,74 @@ export const PortfolioPanel: React.FC = () => {
           {/* TAB 3: RESUME */}
           {currentTab === 'resume' && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center pb-2">
-                <h3 className="text-sm font-mono text-amber-300 uppercase tracking-widest">
-                  Mission Career Log & Experience
-                </h3>
-                <button
-                  onClick={() => alert('Telemetry transmission downloaded: Resume CV PDF package prepared.')}
-                  className="hud-glow-btn flex items-center gap-2 px-3.5 py-1.5 bg-amber-500/20 border border-amber-400 text-amber-300 text-xs font-mono rounded-sm hover:text-white"
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-2">
+                <div>
+                  <h3 className="text-sm font-mono text-amber-300 uppercase tracking-widest">
+                    Telemetry, Experience & Credentials
+                  </h3>
+                  <p className="text-[11px] font-mono text-gray-400">
+                    Official records for Anisha Sahu
+                  </p>
+                </div>
+
+                <a
+                  href={resumeUrl}
+                  download="Anisha_Sahu_Resume.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hud-glow-btn flex items-center justify-center gap-2 px-4 py-2 bg-amber-500/20 border border-amber-400 text-amber-300 text-xs font-mono rounded-sm hover:text-white"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download Telemetry CV</span>
-                </button>
+                  <Download className="w-4 h-4" />
+                  <span>Download CV (PDF)</span>
+                </a>
               </div>
 
-              <div className="space-y-4">
+              {/* Education List */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-mono uppercase tracking-widest text-cyan-300 flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-cyan-400" />
+                  <span>Education & Academic Credentials</span>
+                </h4>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {PORTFOLIO_DATA.educationList.map((edu, idx) => (
+                    <div
+                      key={idx}
+                      className="hud-panel p-5 rounded-sm border-slate-800 bg-slate-950/60"
+                    >
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-1 mb-1">
+                        <h5 className="text-base font-bold font-['Orbitron'] text-white">
+                          {edu.degree}
+                        </h5>
+                        <span className="text-xs font-mono text-cyan-400">{edu.period}</span>
+                      </div>
+                      <div className="text-xs font-mono text-gray-300 mb-2">
+                        {edu.institution} • {edu.location}
+                      </div>
+                      <p className="text-xs text-gray-400 font-['Rajdhani'] leading-relaxed">
+                        {edu.details}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Practical Experience */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-mono uppercase tracking-widest text-amber-300 flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-amber-400" />
+                  <span>Practical Engineering Experience</span>
+                </h4>
+
                 {PORTFOLIO_DATA.experience.map((exp, idx) => (
                   <div
                     key={idx}
                     className="hud-panel p-5 rounded-sm border-slate-800 bg-slate-950/60"
                   >
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-1 mb-2">
-                      <h4 className="text-base font-bold font-['Orbitron'] text-white">
+                      <h5 className="text-base font-bold font-['Orbitron'] text-white">
                         {exp.role} <span className="text-amber-400">@ {exp.company}</span>
-                      </h4>
+                      </h5>
                       <span className="text-xs font-mono text-gray-400">{exp.period}</span>
                     </div>
                     <p className="text-xs text-gray-300 font-['Rajdhani'] leading-relaxed mb-3 font-medium">
@@ -260,20 +373,36 @@ export const PortfolioPanel: React.FC = () => {
                 ))}
               </div>
 
-              {/* Education */}
-              <div className="hud-panel p-5 rounded-sm border-slate-800 bg-slate-950/60">
-                <h4 className="text-xs font-mono text-gray-400 uppercase tracking-widest mb-1">
-                  Education & Qualifications
+              {/* Certifications */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-mono uppercase tracking-widest text-emerald-300 flex items-center gap-2">
+                  <Award className="w-4 h-4 text-emerald-400" />
+                  <span>Professional Certifications & Training</span>
                 </h4>
-                <div className="text-sm font-bold text-white font-['Orbitron']">
-                  {PORTFOLIO_DATA.education.degree}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {PORTFOLIO_DATA.certifications.map((cert, idx) => (
+                    <div
+                      key={idx}
+                      className="hud-panel p-4 rounded-sm border-slate-800 bg-slate-950/60"
+                    >
+                      <div className="flex justify-between items-start gap-2 mb-1">
+                        <h6 className="text-xs font-bold text-white font-['Orbitron'] leading-snug">
+                          {cert.title}
+                        </h6>
+                        <span className="text-[10px] font-mono text-emerald-400 shrink-0">
+                          {cert.year}
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-mono text-gray-400 mb-2">
+                        {cert.issuer}
+                      </div>
+                      <p className="text-[11px] font-mono text-gray-400">
+                        {cert.skills}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-                <div className="text-xs font-mono text-cyan-300">
-                  {PORTFOLIO_DATA.education.institution} • Class of {PORTFOLIO_DATA.education.year}
-                </div>
-                <p className="text-xs text-gray-400 mt-1 font-['Rajdhani']">
-                  {PORTFOLIO_DATA.education.honors}
-                </p>
               </div>
             </div>
           )}
@@ -288,27 +417,51 @@ export const PortfolioPanel: React.FC = () => {
                 <h3 className="text-xl font-black font-['Orbitron'] text-white mb-1">
                   SUB-SPACE TRANSMISSION
                 </h3>
-                <p className="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-6">
+                <p className="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-2">
+                  {PORTFOLIO_DATA.contact.name}
+                </p>
+                <p className="text-xs text-gray-400 mb-6 font-mono">
                   {PORTFOLIO_DATA.contact.availability}
                 </p>
 
-                {/* Direct Email Box with Copy */}
-                <div className="flex items-center justify-between p-3 rounded-sm bg-slate-900 border border-slate-700 mb-6">
-                  <div className="flex items-center gap-2 text-xs font-mono text-cyan-300">
-                    <Mail className="w-4 h-4 text-emerald-400" />
-                    <span>{PORTFOLIO_DATA.contact.email}</span>
-                  </div>
+                {/* Direct Email Box with Copy & Click */}
+                <div className="flex items-center justify-between p-3 rounded-sm bg-slate-900 border border-slate-700 mb-3 text-left">
+                  <a
+                    href={`mailto:${PORTFOLIO_DATA.contact.email}`}
+                    className="flex items-center gap-2 text-xs font-mono text-cyan-300 hover:text-white truncate"
+                  >
+                    <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span className="truncate">{PORTFOLIO_DATA.contact.email}</span>
+                  </a>
                   <button
                     onClick={handleCopyEmail}
-                    className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400 text-xs font-mono text-emerald-300 rounded transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400 text-xs font-mono text-emerald-300 rounded transition-colors shrink-0 ml-2"
                   >
                     {copiedEmail ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedEmail ? 'Copied' : 'Copy'}</span>
                   </button>
                 </div>
 
-                {/* Social links */}
-                <div className="grid grid-cols-2 gap-3">
+                {/* Direct Phone Box with Copy & Click */}
+                <div className="flex items-center justify-between p-3 rounded-sm bg-slate-900 border border-slate-700 mb-6 text-left">
+                  <a
+                    href={`tel:${PORTFOLIO_DATA.contact.phone.replace(/\s+/g, '')}`}
+                    className="flex items-center gap-2 text-xs font-mono text-cyan-300 hover:text-white"
+                  >
+                    <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{PORTFOLIO_DATA.contact.phone}</span>
+                  </a>
+                  <button
+                    onClick={handleCopyPhone}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400 text-xs font-mono text-emerald-300 rounded transition-colors shrink-0 ml-2"
+                  >
+                    {copiedPhone ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedPhone ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+
+                {/* Social & Download links */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                   <a
                     href={PORTFOLIO_DATA.contact.github}
                     target="_blank"
@@ -328,6 +481,17 @@ export const PortfolioPanel: React.FC = () => {
                     <span>LinkedIn Network</span>
                   </a>
                 </div>
+
+                <a
+                  href={resumeUrl}
+                  download="Anisha_Sahu_Resume.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hud-glow-btn flex items-center justify-center gap-2 w-full p-3 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400 rounded-sm text-xs font-mono text-amber-300 font-bold"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Anisha Sahu CV (PDF)</span>
+                </a>
               </div>
             </div>
           )}
