@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
+import { RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useGameStore } from '../../store/gameStore';
 
@@ -13,13 +14,6 @@ export const SpaceStationModel: React.FC = () => {
   const clonedScene = useMemo(() => {
     const clone = scene.clone(true);
 
-    // Compute bounding box to know exact extents
-    const bbox = new THREE.Box3().setFromObject(clone);
-    const center = new THREE.Vector3();
-    const size = new THREE.Vector3();
-    bbox.getCenter(center);
-    bbox.getSize(size);
-
     clone.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
@@ -30,7 +24,7 @@ export const SpaceStationModel: React.FC = () => {
         if (mesh.material) {
           const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
           mat.roughness = 0.35;
-          mat.metalness = 0.25;
+          mat.metalness = 0.3;
           mesh.material = mat;
         }
       }
@@ -40,9 +34,9 @@ export const SpaceStationModel: React.FC = () => {
   }, [scene, graphicsQuality]);
 
   return (
-    <group position={[0, -2, -10]} scale={[0.15, 0.15, 0.15]}>
+    <RigidBody type="fixed" colliders="trimesh" name="space-kit-world-physics">
       <primitive object={clonedScene} />
-    </group>
+    </RigidBody>
   );
 };
 

@@ -91,7 +91,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
 
   controls: INITIAL_CONTROLS,
 
-  playerCoords: [0, 1.5, 0],
+  playerCoords: [-11.9, 16.5, -12.2],
   playerSpeed: 0,
 
   setGameStatus: (status) => set({ gameStatus: status }),
@@ -228,6 +228,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
       },
       activePanel: null,
       gameStatus: 'landing',
+      playerCoords: [-11.9, 16.5, -12.2],
     });
   },
 }));

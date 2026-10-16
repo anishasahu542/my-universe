@@ -18,8 +18,8 @@ export const CameraController: React.FC<CameraControllerProps> = ({ targetDistan
   const lastMousePosRef = useRef({ x: 0, y: 0 });
 
   // Camera lerp target
-  const currentCamPosRef = useRef(new THREE.Vector3(0, 4, 7));
-  const currentLookAtRef = useRef(new THREE.Vector3(0, 1.2, 0));
+  const currentCamPosRef = useRef(new THREE.Vector3(-11.9, 22, -4));
+  const currentLookAtRef = useRef(new THREE.Vector3(-11.9, 17.5, -12.2));
 
   useEffect(() => {
     const dom = gl.domElement;

@@ -9,7 +9,9 @@ interface PlayerControllerProps {
   initialPosition?: [number, number, number];
 }
 
-export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosition = [0, 2, 0] }) => {
+const DEFAULT_SPAWN: [number, number, number] = [-11.9, 16.5, -12.2];
+
+export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosition = DEFAULT_SPAWN }) => {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const visualRef = useRef<THREE.Group>(null);
   const thrusterRef = useRef<THREE.PointLight>(null);
@@ -66,28 +68,35 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
     const worldMoveX = inputX * cos + inputZ * sin;
     const worldMoveZ = -inputX * sin + inputZ * cos;
 
-    // Speed calculation
-    const baseSpeed = 8.0;
-    const speedMultiplier = sprint ? 1.6 : 1.0;
+    // Speed calculation - tuned for exploring the full space kit model
+    const baseSpeed = 10.0;
+    const speedMultiplier = sprint ? 2.0 : 1.0;
     const targetSpeed = inputLength > 0 ? baseSpeed * speedMultiplier : 0;
 
     const currentVel = rigidBodyRef.current.linvel();
     const vx = worldMoveX * targetSpeed;
     const vz = worldMoveZ * targetSpeed;
 
-    // Jumping physics
-    const isGrounded = Math.abs(currentVel.y) < 0.15;
+    // Low-gravity jetpack / vertical thrusters
     let vy = currentVel.y;
+    const isNearGround = Math.abs(currentVel.y) < 0.8;
 
-    if (jump && isGrounded && canJumpRef.current) {
-      vy = 6.8;
+    if (jump && isNearGround && canJumpRef.current) {
+      vy = 8.5;
       canJumpRef.current = false;
       setTimeout(() => {
         canJumpRef.current = true;
-      }, 350);
+      }, 280);
     }
 
     rigidBodyRef.current.setLinvel({ x: vx, y: vy, z: vz }, true);
+
+    // Void boundary failsafe: if player falls off the planetary structures, respawn to command deck
+    const pos = rigidBodyRef.current.translation();
+    if (pos.y < -65) {
+      rigidBodyRef.current.setTranslation({ x: DEFAULT_SPAWN[0], y: DEFAULT_SPAWN[1], z: DEFAULT_SPAWN[2] }, true);
+      rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    }
 
     // Visual avatar rotation smoothing towards movement
     if (visualRef.current) {
@@ -95,11 +104,11 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
         targetRotationYRef.current = Math.atan2(worldMoveX, worldMoveZ);
         // Thruster glow intensifies during movement
         if (thrusterRef.current) {
-          thrusterRef.current.intensity = sprint ? 4.0 : 2.5;
+          thrusterRef.current.intensity = sprint ? 5.0 : 3.0;
         }
       } else {
         if (thrusterRef.current) {
-          thrusterRef.current.intensity = 0.8;
+          thrusterRef.current.intensity = 1.0;
         }
       }
 
@@ -117,7 +126,6 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
     // Telemetry updates to store every 6 frames to prevent React re-renders
     frameCountRef.current++;
     if (frameCountRef.current % 6 === 0) {
-      const pos = rigidBodyRef.current.translation();
       const horizSpeed = Math.hypot(vx, vz);
       store.updateTelemetry([pos.x, pos.y, pos.z], Number(horizSpeed.toFixed(1)));
     }
@@ -130,7 +138,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
       position={initialPosition}
       enabledRotations={[false, false, false]}
       mass={1}
-      linearDamping={2.5}
+      linearDamping={2.0}
       name="player-rigidbody"
     >
       <CapsuleCollider args={[0.5, 0.4]} position={[0, 0.9, 0]} />
