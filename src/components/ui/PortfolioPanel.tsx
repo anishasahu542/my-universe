@@ -550,15 +550,15 @@ export const PortfolioPanel: React.FC = () => {
                     </span>
                   </div>
                   <div className="p-3 rounded bg-slate-900/80 border border-slate-800 flex justify-between items-center">
-                    <span className="text-gray-300">Camera Orbit & Tilt</span>
+                    <span className="text-gray-300">Camera Mouse-Look & Zoom</span>
                     <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">
-                      Click + Drag / Touch
+                      Click Scene / Scroll Wheel
                     </span>
                   </div>
                   <div className="p-3 rounded bg-slate-900/80 border border-slate-800 flex justify-between items-center">
-                    <span className="text-gray-300">Vertical Thruster Jump</span>
+                    <span className="text-gray-300">Ion Thruster Lift & Flight</span>
                     <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">
-                      Spacebar
+                      Hold Space (Climb / Fly)
                     </span>
                   </div>
                   <div className="p-3 rounded bg-slate-900/80 border border-slate-800 flex justify-between items-center">
