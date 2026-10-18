@@ -4,6 +4,7 @@ import { Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { WAYPOINTS } from '../../data/waypointsData';
 import { useGameStore } from '../../store/gameStore';
+import { playerState } from '../../store/playerState';
 import { InteractiveWaypoint } from '../../types/game';
 
 interface WaypointVisualProps {
@@ -132,8 +133,7 @@ export const InteractionSystem: React.FC = () => {
     const store = useGameStore.getState();
     if (store.gameStatus !== 'playing') return;
 
-    const [px, py, pz] = store.playerCoords;
-    const playerPos = new THREE.Vector3(px, py, pz);
+    const playerPos = playerState.position;
 
     let nearestWaypoint: InteractiveWaypoint | null = null;
     let minDistance = Infinity;

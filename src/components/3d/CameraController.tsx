@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useRapier } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useGameStore } from '../../store/gameStore';
+import { playerState } from '../../store/playerState';
 
 interface CameraControllerProps {
   initialDistance?: number;
@@ -132,10 +133,12 @@ export const CameraController: React.FC<CameraControllerProps> = ({
   }, [gl, settings.mouseSensitivity, settings.invertY]);
 
   useFrame((_, delta) => {
-    const store = useGameStore.getState();
-    const [px, py, pz] = store.playerCoords;
-
-    const targetLookAt = new THREE.Vector3(px, py + 1.2, pz);
+    // 60 FPS synchronous target tracking without React state lag
+    const targetLookAt = new THREE.Vector3(
+      playerState.position.x,
+      playerState.position.y + 1.2,
+      playerState.position.z
+    );
 
     // Smoothly interpolate angles and zoom distance
     const angleLerp = Math.min(1, delta * 18);
@@ -160,15 +163,25 @@ export const CameraController: React.FC<CameraControllerProps> = ({
     const camDir = new THREE.Vector3(camDirX, camDirY, camDirZ).normalize();
 
     // Camera Occlusion Avoidance Raycast:
-    // Cast ray from target towards camera position to keep camera in front of walls
-    const rayOrigin = { x: targetLookAt.x, y: targetLookAt.y, z: targetLookAt.z };
-    const rayDirection = { x: camDir.x, y: camDir.y, z: camDir.z };
-    const camRay = new rapier.Ray(rayOrigin, rayDirection);
-    const hit = world.castRay(camRay, distance, true);
+    // Start ray probe outside the player capsule (0.85m offset) to prevent self-collision and camera flickering
+    const rayStartOffset = 0.85;
+    const maxCastDistance = Math.max(0, distance - rayStartOffset);
 
-    if (hit && hit.timeOfImpact < distance) {
-      // Pull camera in front of the wall surface with small cushion
-      distance = Math.max(2.2, hit.timeOfImpact - 0.4);
+    if (maxCastDistance > 0.2) {
+      const rayOrigin = {
+        x: targetLookAt.x + camDir.x * rayStartOffset,
+        y: targetLookAt.y + camDir.y * rayStartOffset,
+        z: targetLookAt.z + camDir.z * rayStartOffset,
+      };
+      const rayDirection = { x: camDir.x, y: camDir.y, z: camDir.z };
+      const camRay = new rapier.Ray(rayOrigin, rayDirection);
+      const hit = world.castRay(camRay, maxCastDistance, true);
+
+      if (hit && hit.timeOfImpact < maxCastDistance) {
+        // Obstacle behind camera: pull in front with margin
+        const safeDist = rayStartOffset + hit.timeOfImpact - 0.35;
+        distance = Math.max(2.6, safeDist);
+      }
     }
 
     const desiredX = targetLookAt.x + camDir.x * distance;

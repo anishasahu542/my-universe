@@ -42,6 +42,23 @@ export const PortfolioPanel: React.FC = () => {
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
 
+  const handleExit = () => {
+    closePanel();
+    document.querySelector('canvas')?.focus();
+  };
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleExit();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+  }, []);
+
   if (activePanel === null || activePanel === 'settings') {
     return null;
   }
@@ -70,8 +87,18 @@ export const PortfolioPanel: React.FC = () => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-6 select-none">
-      <div className="hud-panel p-4 sm:p-8 max-w-4xl w-full h-[90vh] flex flex-col border-cyan-400/50 relative overflow-hidden">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          handleExit();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-6 select-none cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="hud-panel p-4 sm:p-8 max-w-4xl w-full h-[90vh] flex flex-col border-cyan-400/50 relative overflow-hidden cursor-default"
+      >
         {/* Top Header Bar */}
         <div className="flex justify-between items-center pb-4 border-b border-cyan-500/20 shrink-0">
           <div className="flex items-center gap-3">
@@ -88,13 +115,23 @@ export const PortfolioPanel: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={closePanel}
-            className="p-2 rounded-sm bg-slate-900 border border-slate-700 hover:border-cyan-400 text-gray-400 hover:text-white transition-colors"
-            title="Close [Esc]"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExit}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-slate-900 border border-slate-700 hover:border-cyan-400 text-xs font-mono text-cyan-300 hover:text-white transition-colors"
+              title="Return to Journey [Esc]"
+            >
+              <span>[ESC]</span>
+              <span className="hidden sm:inline">EXIT</span>
+            </button>
+            <button
+              onClick={handleExit}
+              className="p-2 rounded-sm bg-slate-900 border border-slate-700 hover:border-cyan-400 text-gray-400 hover:text-white transition-colors"
+              title="Close [Esc]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Navigation Bar */}
@@ -586,15 +623,18 @@ export const PortfolioPanel: React.FC = () => {
         </div>
 
         {/* Footer Navigation */}
-        <div className="pt-4 border-t border-cyan-500/20 flex justify-between items-center shrink-0">
-          <span className="text-[10px] font-mono text-gray-500 uppercase">
-            PRESS [ESC] TO CLOSE ARCHIVE
-          </span>
+        <div className="pt-4 border-t border-cyan-500/20 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 text-xs font-mono text-gray-400">
+            <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">
+              [ESC]
+            </span>
+            <span>Click outside or press [ESC] to resume space journey</span>
+          </div>
           <button
-            onClick={closePanel}
-            className="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold font-['Orbitron'] text-xs tracking-wider uppercase rounded-sm shadow-[0_0_15px_rgba(0,240,255,0.4)]"
+            onClick={handleExit}
+            className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black font-['Orbitron'] text-xs tracking-wider uppercase rounded-sm shadow-[0_0_20px_rgba(0,240,255,0.4)] flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-102"
           >
-            Return to Vessel
+            <span>Resume Journey [Esc]</span>
           </button>
         </div>
       </div>

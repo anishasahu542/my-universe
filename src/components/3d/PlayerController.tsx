@@ -4,6 +4,7 @@ import { RigidBody, CapsuleCollider, RapierRigidBody, useRapier } from '@react-t
 import * as THREE from 'three';
 import { useKeyboardControls } from '../../hooks/useKeyboardControls';
 import { useGameStore } from '../../store/gameStore';
+import { playerState } from '../../store/playerState';
 
 interface PlayerControllerProps {
   initialPosition?: [number, number, number];
@@ -176,11 +177,15 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
       visualRef.current.position.y = 1.0 + Math.sin(Date.now() * 0.005) * 0.06;
     }
 
-    // Telemetry updates to store every 6 frames to prevent React re-renders
+    // 8. Update real-time 60 FPS player state for smooth camera tracking
+    playerState.position.set(pos.x, pos.y, pos.z);
+    playerState.velocity.set(newVx, vy, newVz);
+    playerState.speed = Math.hypot(newVx, newVz);
+
+    // Throttle React DOM telemetry updates to ~4 Hz (every 15 frames) to eliminate UI re-render churn
     frameCountRef.current++;
-    if (frameCountRef.current % 6 === 0) {
-      const horizSpeed = Math.hypot(newVx, newVz);
-      store.updateTelemetry([pos.x, pos.y, pos.z], Number(horizSpeed.toFixed(1)));
+    if (frameCountRef.current % 15 === 0) {
+      store.updateTelemetry([pos.x, pos.y, pos.z], Number(playerState.speed.toFixed(1)));
     }
   });
 

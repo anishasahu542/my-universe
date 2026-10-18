@@ -19,10 +19,12 @@ export const SceneManager: React.FC = () => {
         const store = useGameStore.getState();
         if (store.activePanel !== null) {
           store.closePanel();
+          document.querySelector('canvas')?.focus();
         } else if (store.gameStatus === 'playing') {
           store.pauseGame();
         } else if (store.gameStatus === 'paused') {
           store.resumeGame();
+          document.querySelector('canvas')?.focus();
         }
       }
     };

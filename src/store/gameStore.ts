@@ -152,7 +152,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
   setInteractionTarget: (target, distance = 0) => {
     const currentTarget = get().interaction.activeTarget;
     // Prevent unneeded React re-renders if target hasn't changed
-    if (currentTarget?.id === target?.id && (!target || Math.abs(get().interaction.distance - distance) < 0.2)) {
+    if (currentTarget?.id === target?.id && (!target || Math.abs(get().interaction.distance - distance) < 0.5)) {
       return;
     }
     set({
