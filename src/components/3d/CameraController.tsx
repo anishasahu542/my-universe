@@ -1,65 +1,133 @@
 import React, { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
+import { useRapier } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useGameStore } from '../../store/gameStore';
 
 interface CameraControllerProps {
+  initialDistance?: number;
   targetDistance?: number;
 }
 
-export const CameraController: React.FC<CameraControllerProps> = ({ targetDistance = 6.5 }) => {
+export const CameraController: React.FC<CameraControllerProps> = ({
+  initialDistance,
+  targetDistance,
+}) => {
+  const initDist = targetDistance ?? initialDistance ?? 7.5;
   const { camera, gl } = useThree();
   const settings = useGameStore((s) => s.settings);
+  const gameStatus = useGameStore((s) => s.gameStatus);
+  const activePanel = useGameStore((s) => s.activePanel);
+  const { rapier, world } = useRapier();
 
-  // Spherical camera angles
-  const yawRef = useRef(0); // Horizontal angle in radians
-  const pitchRef = useRef(0.25); // Vertical angle in radians (slight top-down view)
+  // Spherical camera angles (target & smoothed)
+  const targetYawRef = useRef(0);
+  const currentYawRef = useRef(0);
+  const targetPitchRef = useRef(0.25);
+  const currentPitchRef = useRef(0.25);
+
+  // Zoom distance (target & smoothed)
+  const targetDistanceRef = useRef(initDist);
+  const currentDistanceRef = useRef(initDist);
+
+  // Dragging & pointer lock states
   const isDraggingRef = useRef(false);
   const lastMousePosRef = useRef({ x: 0, y: 0 });
 
-  // Camera lerp target
+  // Camera lerp vectors
   const currentCamPosRef = useRef(new THREE.Vector3(-11.9, 22, -4));
   const currentLookAtRef = useRef(new THREE.Vector3(-11.9, 17.5, -12.2));
 
+  // Release pointer lock when game is paused or modal panel is opened
+  useEffect(() => {
+    if (gameStatus !== 'playing' || activePanel !== null) {
+      if (document.pointerLockElement === gl.domElement) {
+        document.exitPointerLock?.();
+      }
+    }
+  }, [gameStatus, activePanel, gl]);
+
+  // Pointer & mouse event listeners
   useEffect(() => {
     const dom = gl.domElement;
 
+    const sens = settings.mouseSensitivity * 0.003;
+    const yMultiplier = settings.invertY ? -1 : 1;
+
+    // Handle click on canvas to request pointer lock for seamless FPS/third-person mouse-look
+    const handleCanvasClick = () => {
+      const store = useGameStore.getState();
+      if (store.gameStatus === 'playing' && store.activePanel === null) {
+        if (document.pointerLockElement !== dom) {
+          dom.requestPointerLock?.();
+        }
+      }
+    };
+
+    // Handle mouse movement when pointer is locked
+    const handleMouseMove = (e: MouseEvent) => {
+      if (document.pointerLockElement === dom) {
+        targetYawRef.current -= e.movementX * sens;
+        targetPitchRef.current += e.movementY * sens * yMultiplier;
+        targetPitchRef.current = Math.max(-0.15, Math.min(1.28, targetPitchRef.current));
+      }
+    };
+
+    // Handle pointer drag when pointer is unlocked or on touch devices
     const handlePointerDown = (e: PointerEvent) => {
-      // Allow drag with primary or secondary mouse button
+      if (document.pointerLockElement === dom) return;
       isDraggingRef.current = true;
       lastMousePosRef.current = { x: e.clientX, y: e.clientY };
+      try {
+        dom.setPointerCapture(e.pointerId);
+      } catch {
+        // Fallback for browsers that don't support pointer capture
+      }
     };
 
     const handlePointerMove = (e: PointerEvent) => {
-      if (!isDraggingRef.current) return;
+      if (document.pointerLockElement === dom || !isDraggingRef.current) return;
 
       const deltaX = e.clientX - lastMousePosRef.current.x;
       const deltaY = e.clientY - lastMousePosRef.current.y;
-
       lastMousePosRef.current = { x: e.clientX, y: e.clientY };
 
-      const sens = settings.mouseSensitivity * 0.004;
-      const yMultiplier = settings.invertY ? -1 : 1;
-
-      yawRef.current -= deltaX * sens;
-      pitchRef.current += deltaY * sens * yMultiplier;
-
-      // Clamp vertical pitch (-10 deg to 75 deg)
-      pitchRef.current = Math.max(-0.15, Math.min(1.3, pitchRef.current));
+      targetYawRef.current -= deltaX * sens * 1.2;
+      targetPitchRef.current += deltaY * sens * 1.2 * yMultiplier;
+      targetPitchRef.current = Math.max(-0.15, Math.min(1.28, targetPitchRef.current));
     };
 
-    const handlePointerUp = () => {
+    const handlePointerUp = (e: PointerEvent) => {
       isDraggingRef.current = false;
+      try {
+        dom.releasePointerCapture(e.pointerId);
+      } catch {
+        // Fallback
+      }
     };
 
+    // Handle mouse wheel zoom
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      targetDistanceRef.current = Math.max(3.2, Math.min(18.0, targetDistanceRef.current + e.deltaY * 0.008));
+    };
+
+    dom.addEventListener('click', handleCanvasClick);
+    window.addEventListener('mousemove', handleMouseMove);
     dom.addEventListener('pointerdown', handlePointerDown);
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
+    dom.addEventListener('pointermove', handlePointerMove);
+    dom.addEventListener('pointerup', handlePointerUp);
+    dom.addEventListener('pointercancel', handlePointerUp);
+    dom.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
+      dom.removeEventListener('click', handleCanvasClick);
+      window.removeEventListener('mousemove', handleMouseMove);
       dom.removeEventListener('pointerdown', handlePointerDown);
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
+      dom.removeEventListener('pointermove', handlePointerMove);
+      dom.removeEventListener('pointerup', handlePointerUp);
+      dom.removeEventListener('pointercancel', handlePointerUp);
+      dom.removeEventListener('wheel', handleWheel);
     };
   }, [gl, settings.mouseSensitivity, settings.invertY]);
 
@@ -69,20 +137,49 @@ export const CameraController: React.FC<CameraControllerProps> = ({ targetDistan
 
     const targetLookAt = new THREE.Vector3(px, py + 1.2, pz);
 
-    // Calculate desired camera position on sphere around target
-    const distance = targetDistance;
-    const horizontalDist = distance * Math.cos(pitchRef.current);
-    const verticalDist = distance * Math.sin(pitchRef.current);
+    // Smoothly interpolate angles and zoom distance
+    const angleLerp = Math.min(1, delta * 18);
+    currentYawRef.current = THREE.MathUtils.lerp(currentYawRef.current, targetYawRef.current, angleLerp);
+    currentPitchRef.current = THREE.MathUtils.lerp(currentPitchRef.current, targetPitchRef.current, angleLerp);
 
-    const desiredX = px + horizontalDist * Math.sin(yawRef.current);
-    const desiredY = py + 1.2 + verticalDist;
-    const desiredZ = pz + horizontalDist * Math.cos(yawRef.current);
+    const distLerp = Math.min(1, delta * 10);
+    currentDistanceRef.current = THREE.MathUtils.lerp(currentDistanceRef.current, targetDistanceRef.current, distLerp);
+
+    // Calculate spherical camera offset
+    const pitch = currentPitchRef.current;
+    const yaw = currentYawRef.current;
+    let distance = currentDistanceRef.current;
+
+    const horizontalDist = Math.cos(pitch);
+    const verticalDist = Math.sin(pitch);
+
+    const camDirX = horizontalDist * Math.sin(yaw);
+    const camDirY = verticalDist;
+    const camDirZ = horizontalDist * Math.cos(yaw);
+
+    const camDir = new THREE.Vector3(camDirX, camDirY, camDirZ).normalize();
+
+    // Camera Occlusion Avoidance Raycast:
+    // Cast ray from target towards camera position to keep camera in front of walls
+    const rayOrigin = { x: targetLookAt.x, y: targetLookAt.y, z: targetLookAt.z };
+    const rayDirection = { x: camDir.x, y: camDir.y, z: camDir.z };
+    const camRay = new rapier.Ray(rayOrigin, rayDirection);
+    const hit = world.castRay(camRay, distance, true);
+
+    if (hit && hit.timeOfImpact < distance) {
+      // Pull camera in front of the wall surface with small cushion
+      distance = Math.max(2.2, hit.timeOfImpact - 0.4);
+    }
+
+    const desiredX = targetLookAt.x + camDir.x * distance;
+    const desiredY = targetLookAt.y + camDir.y * distance;
+    const desiredZ = targetLookAt.z + camDir.z * distance;
 
     const desiredPos = new THREE.Vector3(desiredX, desiredY, desiredZ);
 
-    // Smoothly lerp camera position and lookAt target
-    currentCamPosRef.current.lerp(desiredPos, delta * 9);
-    currentLookAtRef.current.lerp(targetLookAt, delta * 12);
+    // Smooth camera tracking
+    currentCamPosRef.current.lerp(desiredPos, Math.min(1, delta * 15));
+    currentLookAtRef.current.lerp(targetLookAt, Math.min(1, delta * 20));
 
     camera.position.copy(currentCamPosRef.current);
     camera.lookAt(currentLookAtRef.current);

@@ -34,7 +34,13 @@ export const SpaceStationModel: React.FC = () => {
   }, [scene, graphicsQuality]);
 
   return (
-    <RigidBody type="fixed" colliders="trimesh" name="space-kit-world-physics">
+    <RigidBody
+      type="fixed"
+      colliders="trimesh"
+      friction={0.4}
+      restitution={0.0}
+      name="space-kit-world-physics"
+    >
       <primitive object={clonedScene} />
     </RigidBody>
   );

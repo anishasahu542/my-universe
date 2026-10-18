@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { RigidBody, CapsuleCollider, RapierRigidBody } from '@react-three/rapier';
+import { RigidBody, CapsuleCollider, RapierRigidBody, useRapier } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useKeyboardControls } from '../../hooks/useKeyboardControls';
 import { useGameStore } from '../../store/gameStore';
@@ -17,6 +17,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
   const thrusterRef = useRef<THREE.PointLight>(null);
   const keysRef = useKeyboardControls();
   const { camera } = useThree();
+  const { rapier, world } = useRapier();
 
   // Internal state tracking
   const canJumpRef = useRef(true);
@@ -28,7 +29,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
 
     const store = useGameStore.getState();
     if (store.gameStatus !== 'playing') {
-      // If paused or in panel, damp velocity to zero
+      // If paused or in modal, damp velocity to zero
       rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
       return;
     }
@@ -41,68 +42,120 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
     const jump = keysRef.current.jump || store.controls.jump;
     const sprint = keysRef.current.sprint || store.controls.sprint;
 
-    // Movement direction in local space
-    let inputX = 0;
-    let inputZ = 0;
-
-    if (forward) inputZ -= 1;
-    if (backward) inputZ += 1;
-    if (left) inputX -= 1;
-    if (right) inputX += 1;
-
-    const inputLength = Math.hypot(inputX, inputZ);
-    if (inputLength > 0.001) {
-      inputX /= inputLength;
-      inputZ /= inputLength;
+    // 1. Precise Camera-Relative Forward & Right vectors on horizontal XZ plane
+    const camForward = new THREE.Vector3();
+    camera.getWorldDirection(camForward);
+    camForward.y = 0;
+    if (camForward.lengthSq() > 0.0001) {
+      camForward.normalize();
+    } else {
+      camForward.set(0, 0, -1);
     }
 
-    // Camera yaw calculation so W is always forward relative to camera view
-    const cameraDirection = new THREE.Vector3();
-    camera.getWorldDirection(cameraDirection);
-    const cameraYaw = Math.atan2(cameraDirection.x, cameraDirection.z);
+    const camRight = new THREE.Vector3().crossVectors(camForward, new THREE.Vector3(0, 1, 0)).normalize();
 
-    // Rotate movement vector by camera yaw
-    const sin = Math.sin(cameraYaw);
-    const cos = Math.cos(cameraYaw);
+    // Compute intended input movement direction
+    const moveDir = new THREE.Vector3();
+    if (forward) moveDir.add(camForward);
+    if (backward) moveDir.sub(camForward);
+    if (right) moveDir.add(camRight);
+    if (left) moveDir.sub(camRight);
 
-    const worldMoveX = inputX * cos + inputZ * sin;
-    const worldMoveZ = -inputX * sin + inputZ * cos;
+    const isMoving = moveDir.lengthSq() > 0.001;
+    if (isMoving) {
+      moveDir.normalize();
+    }
 
-    // Speed calculation - tuned for exploring the full space kit model
-    const baseSpeed = 10.0;
-    const speedMultiplier = sprint ? 2.0 : 1.0;
-    const targetSpeed = inputLength > 0 ? baseSpeed * speedMultiplier : 0;
-
+    const pos = rigidBodyRef.current.translation();
     const currentVel = rigidBodyRef.current.linvel();
-    const vx = worldMoveX * targetSpeed;
-    const vz = worldMoveZ * targetSpeed;
 
-    // Low-gravity jetpack / vertical thrusters
+    // 2. Continuous Ground Detection via Downward Raycast
+    // Capsule center is at pos.y + 1.0; distance to bottom foot is 1.0m
+    const groundRayOrigin = { x: pos.x, y: pos.y + 0.9, z: pos.z };
+    const groundRayDir = { x: 0, y: -1, z: 0 };
+    const groundRay = new rapier.Ray(groundRayOrigin, groundRayDir);
+    const groundHit = world.castRay(
+      groundRay,
+      1.18, // Max ray length to detect floor right under capsule
+      true,
+      undefined,
+      undefined,
+      undefined,
+      rigidBodyRef.current
+    );
+
+    const isGrounded = groundHit !== null && groundHit.timeOfImpact <= 1.18;
+
+    // 3. Wall Deflection & Sliding via Forward Raycast
+    // Prevents clipping through thin trimesh walls by deflecting velocity along surface tangent
+    const effectiveMoveDir = moveDir.clone();
+    if (isMoving) {
+      const wallRayOrigin = { x: pos.x, y: pos.y + 0.7, z: pos.z };
+      const wallRayDir = { x: moveDir.x, y: 0, z: moveDir.z };
+      const wallRay = new rapier.Ray(wallRayOrigin, wallRayDir);
+      const wallHit = world.castRayAndGetNormal(
+        wallRay,
+        0.75, // Capsule radius 0.45m + 0.3m probe distance
+        true,
+        undefined,
+        undefined,
+        undefined,
+        rigidBodyRef.current
+      );
+
+      if (wallHit && wallHit.timeOfImpact < 0.75) {
+        const wallNormal = new THREE.Vector3(wallHit.normal.x, wallHit.normal.y, wallHit.normal.z);
+        // Only deflect against steep obstacles/walls (normal.y < 0.7)
+        if (Math.abs(wallNormal.y) < 0.7) {
+          const dot = effectiveMoveDir.dot(wallNormal);
+          if (dot < 0) {
+            // Subtract velocity component moving directly into the obstacle
+            effectiveMoveDir.sub(wallNormal.clone().multiplyScalar(dot));
+            if (effectiveMoveDir.lengthSq() > 0.0001) {
+              effectiveMoveDir.normalize();
+            } else {
+              effectiveMoveDir.set(0, 0, 0);
+            }
+          }
+        }
+      }
+    }
+
+    // 4. Smooth Velocity Acceleration & Control
+    const baseSpeed = 8.5;
+    const speedMultiplier = sprint ? 1.5 : 1.0;
+    const targetSpeed = isMoving ? baseSpeed * speedMultiplier : 0;
+
+    const targetVx = effectiveMoveDir.x * targetSpeed;
+    const targetVz = effectiveMoveDir.z * targetSpeed;
+
+    const accel = isMoving ? 18.0 : 25.0;
+    const newVx = THREE.MathUtils.lerp(currentVel.x, targetVx, Math.min(1, delta * accel));
+    const newVz = THREE.MathUtils.lerp(currentVel.z, targetVz, Math.min(1, delta * accel));
+
+    // 5. Vertical Jump & Gravity Thruster
     let vy = currentVel.y;
-    const isNearGround = Math.abs(currentVel.y) < 0.8;
-
-    if (jump && isNearGround && canJumpRef.current) {
-      vy = 8.5;
+    if (jump && isGrounded && canJumpRef.current) {
+      vy = 7.5;
       canJumpRef.current = false;
       setTimeout(() => {
         canJumpRef.current = true;
-      }, 280);
+      }, 300);
     }
 
-    rigidBodyRef.current.setLinvel({ x: vx, y: vy, z: vz }, true);
+    rigidBodyRef.current.setLinvel({ x: newVx, y: vy, z: newVz }, true);
 
-    // Void boundary failsafe: if player falls off the planetary structures, respawn to command deck
-    const pos = rigidBodyRef.current.translation();
-    if (pos.y < -65) {
+    // 6. Void boundary failsafe: if player falls off the planetary structures, respawn safely
+    if (pos.y < -55) {
       rigidBodyRef.current.setTranslation({ x: DEFAULT_SPAWN[0], y: DEFAULT_SPAWN[1], z: DEFAULT_SPAWN[2] }, true);
       rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
     }
 
-    // Visual avatar rotation smoothing towards movement
+    // 7. Visual Avatar Turn Smoothing & Thruster Glow
     if (visualRef.current) {
-      if (inputLength > 0.01) {
-        targetRotationYRef.current = Math.atan2(worldMoveX, worldMoveZ);
-        // Thruster glow intensifies during movement
+      if (isMoving && effectiveMoveDir.lengthSq() > 0.001) {
+        targetRotationYRef.current = Math.atan2(effectiveMoveDir.x, effectiveMoveDir.z);
         if (thrusterRef.current) {
           thrusterRef.current.intensity = sprint ? 5.0 : 3.0;
         }
@@ -112,21 +165,21 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
         }
       }
 
-      // Smooth turn
+      // Smooth turning towards movement heading
       visualRef.current.rotation.y = THREE.MathUtils.lerp(
         visualRef.current.rotation.y,
         targetRotationYRef.current,
-        delta * 12
+        Math.min(1, delta * 12)
       );
 
-      // Subtle hover float bobbing
-      visualRef.current.position.y = Math.sin(Date.now() * 0.006) * 0.08;
+      // Subtle float bobbing
+      visualRef.current.position.y = 1.0 + Math.sin(Date.now() * 0.005) * 0.06;
     }
 
     // Telemetry updates to store every 6 frames to prevent React re-renders
     frameCountRef.current++;
     if (frameCountRef.current % 6 === 0) {
-      const horizSpeed = Math.hypot(vx, vz);
+      const horizSpeed = Math.hypot(newVx, newVz);
       store.updateTelemetry([pos.x, pos.y, pos.z], Number(horizSpeed.toFixed(1)));
     }
   });
@@ -138,13 +191,15 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
       position={initialPosition}
       enabledRotations={[false, false, false]}
       mass={1}
-      linearDamping={2.0}
+      linearDamping={1.5}
+      angularDamping={1.0}
+      ccd={true}
       name="player-rigidbody"
     >
-      <CapsuleCollider args={[0.5, 0.4]} position={[0, 0.9, 0]} />
+      <CapsuleCollider args={[0.55, 0.45]} position={[0, 1.0, 0]} friction={0.0} restitution={0.0} />
 
-      {/* Visual Avatar: Anime Space Explorer Probe / Starcraft */}
-      <group ref={visualRef} position={[0, 0.9, 0]}>
+      {/* Visual Avatar: Anime Space Explorer Probe */}
+      <group ref={visualRef} position={[0, 1.0, 0]}>
         {/* Core Cockpit Pod */}
         <mesh castShadow>
           <sphereGeometry args={[0.42, 32, 16]} />

@@ -172,10 +172,12 @@ export const HUD: React.FC = () => {
         </div>
 
         {/* Controls Quick Reference Pill */}
-        <div className="hud-panel px-3 py-2 rounded-sm border-slate-700/80 text-[11px] font-mono text-gray-400 bg-slate-950/80 hidden sm:flex items-center gap-3">
-          <span><strong className="text-cyan-300">[WASD]</strong> Move</span>
+        <div className="hud-panel px-3 py-2 rounded-sm border-slate-700/80 text-[11px] font-mono text-gray-400 bg-slate-950/80 hidden sm:flex items-center gap-2.5">
+          <span><strong className="text-cyan-300">[Click Scene]</strong> Mouse-Look</span>
           <span>•</span>
-          <span><strong className="text-cyan-300">[Mouse Drag]</strong> Orbit Camera</span>
+          <span><strong className="text-cyan-300">[Scroll]</strong> Zoom</span>
+          <span>•</span>
+          <span><strong className="text-cyan-300">[WASD]</strong> Move</span>
           <span>•</span>
           <span><strong className="text-cyan-300">[Space]</strong> Jump</span>
           <span>•</span>
