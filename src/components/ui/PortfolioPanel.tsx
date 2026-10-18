@@ -3,29 +3,39 @@ import {
   X,
   User,
   Briefcase,
-  FileText,
+  Zap,
+  Award,
   Send,
+  FileText,
+  Gamepad2,
   ExternalLink,
   Mail,
   Phone,
   MapPin,
-  Award,
-  GraduationCap,
-  Copy,
   Check,
+  Copy,
   Download,
-  Terminal,
-  ShieldCheck,
   Sparkles,
-  Gamepad2,
+  Star,
+  MessageSquare,
+  Bot,
+  Layers,
+  GraduationCap,
 } from 'lucide-react';
 import { useGameStore } from '../../store/gameStore';
 import { PORTFOLIO_DATA } from '../../data/portfolioData';
+import { SKILLS_DATA } from '../../data/skillsData';
+import { ACHIEVEMENTS_DATA } from '../../data/achievementsData';
+import { ABOUT_DIALOGUE_DATA } from '../../data/aboutDialogueData';
 import { PortfolioTab } from '../../types/game';
 
 const GithubIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+    />
   </svg>
 );
 
@@ -39,8 +49,17 @@ export const PortfolioPanel: React.FC = () => {
   const activePanel = useGameStore((s) => s.activePanel);
   const closePanel = useGameStore((s) => s.closePanel);
   const openPanel = useGameStore((s) => s.openPanel);
+  const progression = useGameStore((s) => s.progression);
+  const collectSkill = useGameStore((s) => s.collectSkill);
+
+  // Local state for tabs
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('aegis-ai');
+  const [skillCategoryFilter, setSkillCategoryFilter] = useState<string>('all');
+  const [selectedDialogueId, setSelectedDialogueId] = useState<string>('who-are-you');
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
+  const [messageSent, setMessageSent] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
 
   const handleExit = () => {
     closePanel();
@@ -78,13 +97,33 @@ export const PortfolioPanel: React.FC = () => {
     setTimeout(() => setCopiedPhone(false), 2000);
   };
 
+  const handleSubmitContact = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.message) return;
+    setMessageSent(true);
+    setTimeout(() => {
+      setMessageSent(false);
+      setFormData({ name: '', email: '', message: '' });
+    }, 4000);
+  };
+
   const navTabs: { id: PortfolioTab | 'controls'; label: string; icon: React.ReactNode; color: string }[] = [
-    { id: 'about', label: 'Identity & Bio', icon: <User className="w-4 h-4" />, color: '#00F0FF' },
-    { id: 'projects', label: 'Hangar (Projects)', icon: <Briefcase className="w-4 h-4" />, color: '#A855F7' },
-    { id: 'resume', label: 'Telemetry (Resume)', icon: <FileText className="w-4 h-4" />, color: '#F59E0B' },
-    { id: 'contact', label: 'Transmissions', icon: <Send className="w-4 h-4" />, color: '#10B981' },
-    { id: 'controls', label: 'Flight Controls', icon: <Gamepad2 className="w-4 h-4" />, color: '#38BDF8' },
+    { id: 'projects', label: 'Projects Island', icon: <Briefcase className="w-4 h-4" />, color: '#00F0FF' },
+    { id: 'skills', label: 'Skills Runway', icon: <Zap className="w-4 h-4" />, color: '#A855F7' },
+    { id: 'about', label: 'About Sanctuary', icon: <User className="w-4 h-4" />, color: '#F59E0B' },
+    { id: 'achievements', label: 'Hall of Fame', icon: <Award className="w-4 h-4" />, color: '#EAB308' },
+    { id: 'contact', label: 'Contact Garden', icon: <Send className="w-4 h-4" />, color: '#EC4899' },
+    { id: 'resume', label: 'Official CV', icon: <FileText className="w-4 h-4" />, color: '#38BDF8' },
+    { id: 'ending', label: 'Celestial Ending', icon: <Star className="w-4 h-4" />, color: '#FBBF24' },
+    { id: 'controls', label: 'Controls', icon: <Gamepad2 className="w-4 h-4" />, color: '#94A3B8' },
   ];
+
+  const currentDialogue = ABOUT_DIALOGUE_DATA.find((d) => d.id === selectedDialogueId) || ABOUT_DIALOGUE_DATA[0];
+  const activeProject = PORTFOLIO_DATA.projects.find((p) => p.id === selectedProjectId) || PORTFOLIO_DATA.projects[0];
+
+  const filteredSkills = skillCategoryFilter === 'all'
+    ? SKILLS_DATA
+    : SKILLS_DATA.filter((s) => s.category.toLowerCase().includes(skillCategoryFilter.toLowerCase()));
 
   return (
     <div
@@ -93,549 +132,732 @@ export const PortfolioPanel: React.FC = () => {
           handleExit();
         }
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-6 select-none cursor-pointer"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-2 sm:p-6 select-none cursor-pointer"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="hud-panel p-4 sm:p-8 max-w-4xl w-full h-[90vh] flex flex-col border-cyan-400/50 relative overflow-hidden cursor-default"
+        className="hud-panel p-4 sm:p-6 max-w-5xl w-full h-[92vh] flex flex-col border-cyan-400/50 relative overflow-hidden cursor-default bg-slate-950/95"
       >
-        {/* Top Header Bar */}
-        <div className="flex justify-between items-center pb-4 border-b border-cyan-500/20 shrink-0">
+        {/* Top Header */}
+        <div className="flex justify-between items-center pb-3 border-b border-cyan-500/30">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-sm bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-300">
-              <Terminal className="w-4 h-4" />
+            <div className="w-9 h-9 rounded-lg bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(0,240,255,0.3)]">
+              <Sparkles className="w-5 h-5 animate-spin" style={{ animationDuration: '8s' }} />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black tracking-wider text-white font-['Orbitron']">
-                ODYSSEY ARCHIVE
+              <h2 className="font-['Orbitron'] font-bold text-base sm:text-lg text-white tracking-wider flex items-center gap-2">
+                <span>ANISHA SAHU</span>
+                <span className="text-cyan-400 text-xs font-mono font-normal">• ARCHIPELAGO TERMINAL</span>
               </h2>
-              <p className="text-[10px] font-mono text-cyan-400 tracking-widest uppercase">
-                Anisha Sahu • Sector 01 Database • Access Authorized
+              <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
+                Interactive Celestial Codex &bull; Press [Esc] to Return
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleExit}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-slate-900 border border-slate-700 hover:border-cyan-400 text-xs font-mono text-cyan-300 hover:text-white transition-colors"
-              title="Return to Journey [Esc]"
-            >
-              <span>[ESC]</span>
-              <span className="hidden sm:inline">EXIT</span>
-            </button>
-            <button
-              onClick={handleExit}
-              className="p-2 rounded-sm bg-slate-900 border border-slate-700 hover:border-cyan-400 text-gray-400 hover:text-white transition-colors"
-              title="Close [Esc]"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            onClick={handleExit}
+            className="hud-glow-btn p-2 rounded-lg bg-slate-900 border border-red-500/40 text-red-400 hover:text-white hover:bg-red-500/20 transition-all cursor-pointer"
+            title="Close Panel [Esc]"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Tab Navigation Bar */}
-        <div className="flex overflow-x-auto py-3 gap-2 border-b border-slate-800 shrink-0 scrollbar-none">
-          {navTabs.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => openPanel(t.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-sm text-xs font-mono font-medium whitespace-nowrap transition-all ${
-                currentTab === t.id
-                  ? 'bg-cyan-500/20 border border-cyan-400 text-white shadow-[0_0_12px_rgba(0,240,255,0.25)]'
-                  : 'bg-slate-900/60 border border-slate-800 text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              <span style={{ color: t.color }}>{t.icon}</span>
-              <span>{t.label}</span>
-            </button>
-          ))}
+        {/* Tab Navigation Chips */}
+        <div className="flex items-center gap-1.5 sm:gap-2 py-3 overflow-x-auto no-scrollbar border-b border-slate-800">
+          {navTabs.map((tab) => {
+            const isActive = currentTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => openPanel(tab.id as PortfolioTab | 'controls')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono transition-all whitespace-nowrap cursor-pointer ${
+                  isActive
+                    ? 'bg-cyan-500/20 text-white border border-cyan-400 shadow-[0_0_12px_rgba(0,240,255,0.4)]'
+                    : 'bg-slate-900/60 text-gray-400 border border-slate-800 hover:text-white hover:border-slate-700'
+                }`}
+              >
+                <span style={{ color: tab.color }}>{tab.icon}</span>
+                <span className="font-medium">{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Tab Content Area (Scrollable) */}
-        <div className="flex-1 overflow-y-auto py-6 pr-2">
-          {/* TAB 1: ABOUT */}
-          {currentTab === 'about' && (
+        {/* Scrollable Main Content Area */}
+        <div className="flex-1 overflow-y-auto pr-1 py-4 text-gray-200">
+          {/* ========================================================
+              TAB 1: PROJECTS ISLAND (Panels 3 & 4)
+          ======================================================== */}
+          {currentTab === 'projects' && (
             <div className="space-y-6">
-              <div className="hud-panel p-6 rounded-sm border-cyan-500/30 bg-slate-950/60">
+              {/* Projects Selector Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {PORTFOLIO_DATA.projects.map((proj) => {
+                  const isSelected = proj.id === selectedProjectId;
+                  return (
+                    <button
+                      key={proj.id}
+                      onClick={() => setSelectedProjectId(proj.id)}
+                      className={`p-3 rounded-lg text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-cyan-500/20 border-2 border-cyan-400 shadow-[0_0_15px_rgba(0,240,255,0.3)]'
+                          : 'bg-slate-900/80 border border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <span className="text-[10px] font-mono text-cyan-300 block uppercase tracking-wider">
+                        {proj.category.split('&')[0]}
+                      </span>
+                      <h4 className="font-['Orbitron'] font-bold text-xs text-white mt-1 truncate">
+                        {proj.title.split('—')[0]}
+                      </h4>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Active Project Detail Desk (Panel 4) */}
+              <div className="p-5 sm:p-6 rounded-xl bg-slate-900/90 border border-cyan-500/40 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
                   <div>
-                    <h3 className="text-2xl font-black text-white font-['Orbitron'] mb-1">
-                      {PORTFOLIO_DATA.profile.name}
+                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono uppercase tracking-wider mb-2">
+                      {activeProject.category}
+                    </span>
+                    <h3 className="font-['Orbitron'] text-xl sm:text-2xl font-bold text-white tracking-wide">
+                      {activeProject.title}
                     </h3>
-                    <p className="text-sm font-['Rajdhani'] font-bold text-cyan-400 uppercase tracking-widest">
-                      {PORTFOLIO_DATA.profile.title}
-                    </p>
-                    <p className="text-xs font-mono text-gray-400 flex items-center gap-1.5 mt-1">
-                      <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>{PORTFOLIO_DATA.profile.location}</span>
-                    </p>
                   </div>
-                  <div className="px-3 py-1 rounded bg-emerald-500/10 border border-emerald-400 text-emerald-300 text-xs font-mono">
-                    ● {PORTFOLIO_DATA.profile.status}
+
+                  {/* Links */}
+                  <div className="flex items-center gap-2">
+                    {activeProject.githubUrl && (
+                      <a
+                        href={activeProject.githubUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hud-glow-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 hover:border-cyan-400 text-xs font-mono text-gray-200 hover:text-white"
+                      >
+                        <GithubIcon className="w-4 h-4 text-cyan-400" />
+                        <span>Source Code</span>
+                      </a>
+                    )}
+                    {activeProject.demoUrl && activeProject.demoUrl !== '#' && (
+                      <a
+                        href={activeProject.demoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hud-glow-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 text-xs font-mono font-bold hover:brightness-110"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>Live Demo</span>
+                      </a>
+                    )}
                   </div>
                 </div>
 
-                <p className="text-gray-300 font-['Rajdhani'] text-base leading-relaxed mb-6 font-medium">
-                  {PORTFOLIO_DATA.profile.bio}
+                <p className="font-['Rajdhani'] text-sm sm:text-base text-gray-300 leading-relaxed mb-6 font-medium">
+                  {activeProject.description}
                 </p>
 
-                {/* Categorized Skills */}
-                <div className="space-y-4 pt-2 border-t border-slate-800/80">
-                  <h4 className="text-xs font-mono uppercase tracking-widest text-cyan-300 flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Technical Architecture & Stacks</span>
-                  </h4>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {PORTFOLIO_DATA.profile.skillCategories.map((group) => (
-                      <div
-                        key={group.category}
-                        className="p-3.5 rounded bg-slate-900/80 border border-slate-800"
+                {/* Architecture & Tech Stack Specs */}
+                <div className="pt-4 border-t border-slate-800">
+                  <h5 className="text-[11px] font-mono text-cyan-300 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Engineered Technologies & Architecture:</span>
+                  </h5>
+                  <div className="flex flex-wrap gap-2">
+                    {activeProject.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-3 py-1 rounded-md bg-slate-950 text-cyan-200 border border-cyan-500/25 text-xs font-mono"
                       >
-                        <div className="text-xs font-bold text-cyan-300 font-['Orbitron'] mb-2">
-                          {group.category}
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {group.skills.map((s) => (
-                            <span
-                              key={s}
-                              className="px-2 py-0.5 rounded-sm bg-slate-950/80 border border-cyan-500/20 text-[11px] font-mono text-gray-200"
-                            >
-                              {s}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+                        #{tag}
+                      </span>
                     ))}
                   </div>
                 </div>
-
-                {/* Languages & Professional Strengths */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4">
-                  <div className="p-3.5 rounded bg-slate-900/80 border border-slate-800">
-                    <div className="text-xs font-bold text-amber-300 font-['Orbitron'] mb-2">
-                      Languages
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-xs font-mono text-gray-300">
-                      {PORTFOLIO_DATA.additionalInfo.languages.map((lang) => (
-                        <span
-                          key={lang.name}
-                          className="px-2.5 py-1 rounded bg-slate-950 border border-slate-800"
-                        >
-                          <strong className="text-white">{lang.name}</strong> ({lang.proficiency})
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="p-3.5 rounded bg-slate-900/80 border border-slate-800">
-                    <div className="text-xs font-bold text-emerald-300 font-['Orbitron'] mb-2">
-                      Professional Strengths
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {PORTFOLIO_DATA.additionalInfo.strengths.map((str) => (
-                        <span
-                          key={str}
-                          className="px-2 py-0.5 rounded bg-slate-950 border border-emerald-500/20 text-[11px] font-mono text-emerald-200"
-                        >
-                          {str}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           )}
 
-          {/* TAB 2: PROJECTS */}
-          {currentTab === 'projects' && (
+          {/* ========================================================
+              TAB 2: SKILLS RUNWAY MINI-GAME (Panel 5)
+          ======================================================== */}
+          {currentTab === 'skills' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {PORTFOLIO_DATA.projects.map((proj) => (
-                  <div
-                    key={proj.id}
-                    className="hud-panel p-5 rounded-sm border-slate-700/80 hover:border-purple-400 transition-all bg-slate-950/70 flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex justify-between items-start gap-2 mb-2">
-                        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                          {proj.category}
-                        </span>
-                        {proj.featured && (
-                          <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
-                            Flagship
-                          </span>
-                        )}
-                      </div>
-                      <h4 className="text-lg font-bold font-['Orbitron'] text-white mb-2">
-                        {proj.title}
-                      </h4>
-                      <p className="text-xs text-gray-300 font-['Rajdhani'] leading-relaxed mb-4 font-medium">
-                        {proj.description}
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {proj.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-gray-300"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="flex gap-2 pt-3 border-t border-slate-800">
-                        {proj.demoUrl && proj.demoUrl !== '#' && (
-                          <a
-                            href={proj.demoUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hud-glow-btn flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500 text-xs font-mono text-purple-200 rounded-sm"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            <span>Launch Space</span>
-                          </a>
-                        )}
-                        {proj.githubUrl && (
-                          <a
-                            href={proj.githubUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hud-glow-btn px-3 flex items-center justify-center py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono text-gray-300 rounded-sm"
-                            title="GitHub Repository"
-                          >
-                            <GithubIcon className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: RESUME */}
-          {currentTab === 'resume' && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-2">
+              {/* Skills Progress Card */}
+              <div className="p-4 sm:p-5 rounded-xl bg-slate-900/90 border border-purple-500/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h3 className="text-sm font-mono text-amber-300 uppercase tracking-widest">
-                    Telemetry, Experience & Credentials
-                  </h3>
-                  <p className="text-[11px] font-mono text-gray-400">
-                    Official records for Anisha Sahu
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-purple-400" />
+                    <h3 className="font-['Orbitron'] font-bold text-sm text-white">
+                      SKY RUNWAY TECH ORBS INVENTORY
+                    </h3>
+                  </div>
+                  <p className="text-xs text-gray-400 font-['Rajdhani'] mt-0.5">
+                    15 3D floating skill orbs are situated along the celestial runway. Run through them in-game or inspect below!
                   </p>
                 </div>
 
-                <a
-                  href={resumeUrl}
-                  download="Anisha_Sahu_Resume.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hud-glow-btn flex items-center justify-center gap-2 px-4 py-2 bg-amber-500/20 border border-amber-400 text-amber-300 text-xs font-mono rounded-sm hover:text-white"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download CV (PDF)</span>
-                </a>
-              </div>
-
-              {/* Education List */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-mono uppercase tracking-widest text-cyan-300 flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-cyan-400" />
-                  <span>Education & Academic Credentials</span>
-                </h4>
-
-                <div className="grid grid-cols-1 gap-3">
-                  {PORTFOLIO_DATA.educationList.map((edu, idx) => (
-                    <div
-                      key={idx}
-                      className="hud-panel p-5 rounded-sm border-slate-800 bg-slate-950/60"
-                    >
-                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-1 mb-1">
-                        <h5 className="text-base font-bold font-['Orbitron'] text-white">
-                          {edu.degree}
-                        </h5>
-                        <span className="text-xs font-mono text-cyan-400">{edu.period}</span>
-                      </div>
-                      <div className="text-xs font-mono text-gray-300 mb-2">
-                        {edu.institution} • {edu.location}
-                      </div>
-                      <p className="text-xs text-gray-400 font-['Rajdhani'] leading-relaxed">
-                        {edu.details}
-                      </p>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-[10px] font-mono text-purple-300 uppercase">Collected</div>
+                    <div className="text-base font-mono font-bold text-white">
+                      {progression.skillsCollected.length} / 15
                     </div>
-                  ))}
+                  </div>
+                  <div className="w-32 bg-slate-950 h-2.5 rounded-full overflow-hidden border border-purple-500/40">
+                    <div
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-300"
+                      style={{ width: `${(progression.skillsCollected.length / 15) * 100}%` }}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Practical Experience */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-mono uppercase tracking-widest text-amber-300 flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-amber-400" />
-                  <span>Practical Engineering Experience</span>
-                </h4>
-
-                {PORTFOLIO_DATA.experience.map((exp, idx) => (
-                  <div
-                    key={idx}
-                    className="hud-panel p-5 rounded-sm border-slate-800 bg-slate-950/60"
+              {/* Category Filter Pills */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                {['all', 'AI', 'Full-Stack', 'Cloud', 'Data'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSkillCategoryFilter(cat)}
+                    className={`px-3 py-1 rounded-lg text-xs font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                      skillCategoryFilter === cat
+                        ? 'bg-purple-500/20 text-purple-200 border border-purple-400'
+                        : 'bg-slate-900/60 text-gray-400 border border-slate-800 hover:text-white'
+                    }`}
                   >
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-1 mb-2">
-                      <h5 className="text-base font-bold font-['Orbitron'] text-white">
-                        {exp.role} <span className="text-amber-400">@ {exp.company}</span>
-                      </h5>
-                      <span className="text-xs font-mono text-gray-400">{exp.period}</span>
-                    </div>
-                    <p className="text-xs text-gray-300 font-['Rajdhani'] leading-relaxed mb-3 font-medium">
-                      {exp.description}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {exp.skills.map((s) => (
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Skills Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {filteredSkills.map((skill) => {
+                  const isCollected = progression.skillsCollected.includes(skill.id);
+                  return (
+                    <div
+                      key={skill.id}
+                      onClick={() => collectSkill(skill.id)}
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer group ${
+                        isCollected
+                          ? 'bg-emerald-950/20 border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
+                          : 'bg-slate-900/80 border-slate-800 hover:border-purple-400/60'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs"
+                            style={{ backgroundColor: `${skill.color}25`, color: skill.color }}
+                          >
+                            {skill.symbol}
+                          </div>
+                          <div>
+                            <h4 className="font-['Orbitron'] font-bold text-xs text-white">
+                              {skill.name}
+                            </h4>
+                            <span className="text-[10px] font-mono text-gray-400">
+                              {skill.category}
+                            </span>
+                          </div>
+                        </div>
+
                         <span
-                          key={s}
-                          className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-amber-200"
+                          className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                            isCollected
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                              : 'bg-slate-800 text-gray-400'
+                          }`}
                         >
-                          {s}
+                          {isCollected ? '✓ ACQUIRED' : 'RUN TO GET'}
                         </span>
-                      ))}
+                      </div>
+
+                      <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden mt-3">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${skill.proficiency}%`,
+                            backgroundColor: skill.color,
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-mono text-gray-400 mt-1">
+                        <span>Proficiency</span>
+                        <span style={{ color: skill.color }}>{skill.proficiency}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================
+              TAB 3: ABOUT SANCTUARY & INTERACTIVE DIALOGUE (Panel 6)
+          ======================================================== */}
+          {currentTab === 'about' && (
+            <div className="space-y-6">
+              {/* Dialogue Tree with Companion Luna & Anisha */}
+              <div className="p-5 sm:p-6 rounded-xl bg-slate-900/90 border border-amber-500/40 relative">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center">
+                    <Bot className="w-5 h-5 text-amber-300" />
+                  </div>
+                  <div>
+                    <h3 className="font-['Orbitron'] font-bold text-sm text-white">
+                      SANCTUARY CONVERSATION MATRIX
+                    </h3>
+                    <p className="text-xs text-gray-400 font-['Rajdhani']">
+                      Select an inquiry topic to converse with Anisha and Companion Luna.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Question Prompt Buttons */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {ABOUT_DIALOGUE_DATA.map((d) => {
+                    const isSelected = d.id === selectedDialogueId;
+                    return (
+                      <button
+                        key={d.id}
+                        onClick={() => setSelectedDialogueId(d.id)}
+                        className={`px-3 py-2 rounded-lg text-xs font-mono transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-amber-500/25 text-amber-200 border-2 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                            : 'bg-slate-950 text-gray-300 border border-slate-800 hover:border-slate-700'
+                        }`}
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{d.question}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Animated Speech Response Display */}
+                <div className="p-4 rounded-xl bg-slate-950 border border-amber-500/30 flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full bg-amber-400/20 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4 text-amber-300" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-mono text-amber-300 uppercase tracking-widest block mb-1">
+                      Response &bull; Mood: {(currentDialogue.mood || 'happy').toUpperCase()}
+                    </span>
+                    <p className="font-['Rajdhani'] text-sm sm:text-base text-gray-200 leading-relaxed font-medium">
+                      “{currentDialogue.answer}”
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Academic & University Profile */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+                  <div className="flex items-center gap-2 mb-2 text-cyan-400 font-['Orbitron'] text-xs font-bold">
+                    <GraduationCap className="w-4 h-4" />
+                    <span>EDUCATION & ALMA MATER</span>
+                  </div>
+                  <h4 className="text-sm font-bold text-white font-['Rajdhani']">
+                    B.Tech in Computer Science & Information Technology
+                  </h4>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    C. V. Raman Global University, Bhubaneswar (2024 – Present)
+                  </p>
+                  <p className="text-xs text-gray-300 font-['Rajdhani'] mt-2">
+                    Focus on distributed systems, AI/ML deep learning architectures, cloud computing, and secure APIs.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+                  <div className="flex items-center gap-2 mb-2 text-amber-400 font-['Orbitron'] text-xs font-bold">
+                    <Award className="w-4 h-4" />
+                    <span>POLYTECHNIC DIPLOMA</span>
+                  </div>
+                  <h4 className="text-sm font-bold text-white font-['Rajdhani']">
+                    Diploma in Information Technology
+                  </h4>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Jharsuguda Polytechnic College (Nov 2021 – Apr 2024)
+                  </p>
+                  <p className="text-xs text-gray-300 font-['Rajdhani'] mt-2">
+                    Distinction in data structures, algorithms, operating systems, and computer network operations.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================
+              TAB 4: ACHIEVEMENTS & HALL OF FAME (Panel 7)
+          ======================================================== */}
+          {currentTab === 'achievements' && (
+            <div className="space-y-6">
+              {/* Monumental 3D Trophy Banner */}
+              <div className="p-6 rounded-xl bg-gradient-to-r from-amber-950/40 via-yellow-950/30 to-slate-900 border border-yellow-500/50 flex flex-col sm:flex-row items-center gap-6 shadow-[0_0_25px_rgba(234,179,8,0.2)]">
+                <div className="w-20 h-20 rounded-2xl bg-yellow-400/20 border-2 border-yellow-400 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(250,204,21,0.4)]">
+                  <Award className="w-10 h-10 text-yellow-300" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-yellow-300 uppercase tracking-widest font-bold">
+                    CELESTIAL HALL OF FAME
+                  </span>
+                  <h3 className="font-['Orbitron'] text-xl sm:text-2xl font-bold text-white mt-1">
+                    State Honors, Medals & National Competitions
+                  </h3>
+                  <p className="font-['Rajdhani'] text-xs sm:text-sm text-gray-300 mt-1 max-w-xl">
+                    Recognized at state and international forums for competitive technical skill excellence, AI innovation, and open-source contributions.
+                  </p>
+                </div>
+              </div>
+
+              {/* List of 5 Medals */}
+              <div className="space-y-3">
+                {ACHIEVEMENTS_DATA.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-yellow-500/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 font-bold text-sm"
+                        style={{ backgroundColor: `${item.color}20`, color: item.color, border: `1px solid ${item.color}40` }}
+                      >
+                        <Award className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-['Orbitron'] font-bold text-sm text-white group-hover:text-yellow-300 transition-colors">
+                            {item.title}
+                          </h4>
+                          <span
+                            className="text-[10px] font-mono px-2 py-0.5 rounded font-bold"
+                            style={{ backgroundColor: `${item.color}25`, color: item.color }}
+                          >
+                            {item.badge}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 font-mono mt-0.5">
+                          {item.organization} &bull; {item.year}
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-300 font-['Rajdhani'] mt-1">
+                          {item.description}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+          )}
 
-              {/* Certifications */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-mono uppercase tracking-widest text-emerald-300 flex items-center gap-2">
-                  <Award className="w-4 h-4 text-emerald-400" />
-                  <span>Professional Certifications & Training</span>
-                </h4>
+          {/* ========================================================
+              TAB 5: CONTACT SAKURA GARDEN (Panel 8)
+          ======================================================== */}
+          {currentTab === 'contact' && (
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="p-4 sm:p-5 rounded-xl bg-slate-900/90 border border-pink-500/40">
+                <span className="text-[10px] font-mono text-pink-300 uppercase tracking-widest font-bold">
+                  SAKURA BLOSSOM OUTPOST
+                </span>
+                <h3 className="font-['Orbitron'] text-lg font-bold text-white mt-1">
+                  Establish Direct Communication with Anisha Sahu
+                </h3>
+                <p className="font-['Rajdhani'] text-xs sm:text-sm text-gray-300 mt-1">
+                  Available for full-stack software engineering roles, AI/ML research collaborations, and creative technical ventures.
+                </p>
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {PORTFOLIO_DATA.certifications.map((cert, idx) => (
-                    <div
-                      key={idx}
-                      className="hud-panel p-4 rounded-sm border-slate-800 bg-slate-950/60"
-                    >
-                      <div className="flex justify-between items-start gap-2 mb-1">
-                        <h6 className="text-xs font-bold text-white font-['Orbitron'] leading-snug">
-                          {cert.title}
-                        </h6>
-                        <span className="text-[10px] font-mono text-emerald-400 shrink-0">
-                          {cert.year}
-                        </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Transmission Form */}
+                <form onSubmit={handleSubmitContact} className="space-y-3.5">
+                  <div>
+                    <label className="text-[10px] font-mono text-gray-400 uppercase tracking-wider block mb-1">
+                      Your Name / Organization
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g. Elena Rostova / Google DeepMind"
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-700 focus:border-pink-400 text-xs font-mono text-white outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-mono text-gray-400 uppercase tracking-wider block mb-1">
+                      Your Email Frequency
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="your.email@organization.com"
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-700 focus:border-pink-400 text-xs font-mono text-white outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-mono text-gray-400 uppercase tracking-wider block mb-1">
+                      Transmission Message
+                    </label>
+                    <textarea
+                      required
+                      rows={4}
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      placeholder="Hello Anisha, we would love to connect with you regarding..."
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-700 focus:border-pink-400 text-xs font-mono text-white outline-none resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 font-['Orbitron'] font-bold text-xs uppercase tracking-widest text-white shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:brightness-110 cursor-pointer transition-all flex items-center justify-center gap-2"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>{messageSent ? 'TRANSMISSION DISPATCHED ✓' : 'TRANSMIT MESSAGE'}</span>
+                  </button>
+
+                  {messageSent && (
+                    <p className="text-xs font-mono text-emerald-400 text-center animate-pulse">
+                      Thank you! Your transmission has been recorded into Anisha’s inbox.
+                    </p>
+                  )}
+                </form>
+
+                {/* Direct Comms & Verified Links */}
+                <div className="space-y-3">
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">
+                        <Mail className="w-4 h-4" />
                       </div>
-                      <div className="text-[11px] font-mono text-gray-400 mb-2">
-                        {cert.issuer}
+                      <div>
+                        <div className="text-[10px] font-mono text-gray-400 uppercase">Direct Email</div>
+                        <div className="text-xs font-mono text-white font-bold">{PORTFOLIO_DATA.contact.email}</div>
                       </div>
-                      <p className="text-[11px] font-mono text-gray-400">
-                        {cert.skills}
-                      </p>
                     </div>
-                  ))}
+                    <button
+                      onClick={handleCopyEmail}
+                      className="p-2 rounded bg-slate-900 border border-slate-700 hover:border-cyan-400 text-cyan-300 cursor-pointer"
+                      title="Copy Email"
+                    >
+                      {copiedEmail ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-pink-500/20 flex items-center justify-center text-pink-400">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-mono text-gray-400 uppercase">Phone Telemetry</div>
+                        <div className="text-xs font-mono text-white font-bold">{PORTFOLIO_DATA.contact.phone}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleCopyPhone}
+                      className="p-2 rounded bg-slate-900 border border-slate-700 hover:border-pink-400 text-pink-300 cursor-pointer"
+                      title="Copy Phone"
+                    >
+                      {copiedPhone ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-mono text-gray-400 uppercase">Coordinates</div>
+                      <div className="text-xs font-mono text-white font-bold">{PORTFOLIO_DATA.contact.location}</div>
+                    </div>
+                  </div>
+
+                  {/* GitHub & LinkedIn Profiles */}
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <a
+                      href={PORTFOLIO_DATA.contact.github}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-cyan-400 flex items-center gap-2 text-xs font-mono text-white"
+                    >
+                      <GithubIcon className="w-4 h-4 text-cyan-400" />
+                      <span>GitHub Profile</span>
+                    </a>
+                    <a
+                      href={PORTFOLIO_DATA.contact.linkedin}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-blue-400 flex items-center gap-2 text-xs font-mono text-white"
+                    >
+                      <LinkedinIcon className="w-4 h-4 text-blue-400" />
+                      <span>LinkedIn Profile</span>
+                    </a>
+                  </div>
+
+                  {/* Resume Download CTA */}
+                  <a
+                    href={resumeUrl}
+                    download="Anisha_Sahu_Resume.pdf"
+                    className="w-full py-3 rounded-xl bg-slate-900 border border-cyan-400/50 hover:border-cyan-400 flex items-center justify-center gap-2 text-xs font-mono text-cyan-300 hover:text-white transition-all shadow-[0_0_15px_rgba(0,240,255,0.2)] mt-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Anisha_Sahu_Resume.pdf</span>
+                  </a>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 4: CONTACT */}
-          {currentTab === 'contact' && (
-            <div className="space-y-6">
-              <div className="hud-panel p-6 rounded-sm border-emerald-500/30 bg-slate-950/60 max-w-xl mx-auto text-center">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-400 mx-auto flex items-center justify-center text-emerald-400 mb-3 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
-                  <Send className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-black font-['Orbitron'] text-white mb-1">
-                  SUB-SPACE TRANSMISSION
-                </h3>
-                <p className="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-2">
-                  {PORTFOLIO_DATA.contact.name}
-                </p>
-                <p className="text-xs text-gray-400 mb-6 font-mono">
-                  {PORTFOLIO_DATA.contact.availability}
-                </p>
+          {/* ========================================================
+              TAB 6: STARLIT CLIFF ENDING SCENE (Panel 9)
+          ======================================================== */}
+          {currentTab === 'ending' && (
+            <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-indigo-950/60 via-purple-950/40 to-slate-950 border border-cyan-400/60 text-center relative overflow-hidden">
+              <div className="w-20 h-20 mx-auto rounded-full bg-cyan-400/20 border-2 border-cyan-400 flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(0,240,255,0.5)]">
+                <Star className="w-10 h-10 text-yellow-300 fill-yellow-300 animate-pulse" />
+              </div>
 
-                {/* Direct Email Box with Copy & Click */}
-                <div className="flex items-center justify-between p-3 rounded-sm bg-slate-900 border border-slate-700 mb-3 text-left">
-                  <a
-                    href={`mailto:${PORTFOLIO_DATA.contact.email}`}
-                    className="flex items-center gap-2 text-xs font-mono text-cyan-300 hover:text-white truncate"
-                  >
-                    <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span className="truncate">{PORTFOLIO_DATA.contact.email}</span>
-                  </a>
-                  <button
-                    onClick={handleCopyEmail}
-                    className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400 text-xs font-mono text-emerald-300 rounded transition-colors shrink-0 ml-2"
-                  >
-                    {copiedEmail ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedEmail ? 'Copied' : 'Copy'}</span>
-                  </button>
-                </div>
+              <span className="text-xs font-mono text-cyan-300 uppercase tracking-widest font-bold">
+                CELESTIAL CLIFF OVERLOOK &bull; EXPEDITION COMPLETE
+              </span>
 
-                {/* Direct Phone Box with Copy & Click */}
-                <div className="flex items-center justify-between p-3 rounded-sm bg-slate-900 border border-slate-700 mb-6 text-left">
-                  <a
-                    href={`tel:${PORTFOLIO_DATA.contact.phone.replace(/\s+/g, '')}`}
-                    className="flex items-center gap-2 text-xs font-mono text-cyan-300 hover:text-white"
-                  >
-                    <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>{PORTFOLIO_DATA.contact.phone}</span>
-                  </a>
-                  <button
-                    onClick={handleCopyPhone}
-                    className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400 text-xs font-mono text-emerald-300 rounded transition-colors shrink-0 ml-2"
-                  >
-                    {copiedPhone ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedPhone ? 'Copied' : 'Copy'}</span>
-                  </button>
-                </div>
+              <h3 className="font-['Orbitron'] text-2xl sm:text-3xl font-black text-white mt-2 mb-3">
+                CONGRATULATIONS, TRAVELER!
+              </h3>
 
-                {/* Social & Download links */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                  <a
-                    href={PORTFOLIO_DATA.contact.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hud-glow-btn flex items-center justify-center gap-2 p-3 bg-slate-900/90 border border-slate-700 hover:border-emerald-400 rounded-sm text-xs font-mono text-gray-200"
-                  >
-                    <GithubIcon className="w-4 h-4 text-emerald-400" />
-                    <span>GitHub Comms</span>
-                  </a>
-                  <a
-                    href={PORTFOLIO_DATA.contact.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hud-glow-btn flex items-center justify-center gap-2 p-3 bg-slate-900/90 border border-slate-700 hover:border-emerald-400 rounded-sm text-xs font-mono text-gray-200"
-                  >
-                    <LinkedinIcon className="w-4 h-4 text-emerald-400" />
-                    <span>LinkedIn Network</span>
-                  </a>
-                </div>
+              <p className="font-['Rajdhani'] text-sm sm:text-base text-gray-200 max-w-xl mx-auto leading-relaxed mb-6">
+                “You have traversed the entire celestial archipelago of Anisha Sahu! You’ve witnessed cutting-edge AI security systems, gathered technical proficiencies along the sky runway, and explored her achievements.”
+              </p>
 
+              {/* Explorer Summary Stats */}
+              <div className="grid grid-cols-3 gap-3 max-w-md mx-auto mb-8">
+                <div className="p-3 rounded-xl bg-slate-900/80 border border-cyan-500/30">
+                  <div className="text-[10px] font-mono text-gray-400">Islands Discovered</div>
+                  <div className="text-lg font-mono font-bold text-cyan-300">
+                    {progression.discoveredIds.length} / {progression.totalWaypoints}
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-900/80 border border-purple-500/30">
+                  <div className="text-[10px] font-mono text-gray-400">Skills Collected</div>
+                  <div className="text-lg font-mono font-bold text-purple-300">
+                    {progression.skillsCollected.length} / 15
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-900/80 border border-amber-500/30">
+                  <div className="text-[10px] font-mono text-gray-400">Honors Unlocked</div>
+                  <div className="text-lg font-mono font-bold text-amber-300">
+                    {progression.achievementsUnlocked.length} / 5
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <a
                   href={resumeUrl}
                   download="Anisha_Sahu_Resume.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hud-glow-btn flex items-center justify-center gap-2 w-full p-3 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400 rounded-sm text-xs font-mono text-amber-300 font-bold"
+                  className="px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 font-['Orbitron'] font-bold text-xs uppercase tracking-widest text-slate-950 flex items-center gap-2 shadow-[0_0_20px_rgba(0,240,255,0.4)]"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download Anisha Sahu CV (PDF)</span>
+                  <span>DOWNLOAD OFFICIAL RESUME</span>
+                </a>
+                <button
+                  onClick={() => openPanel('contact')}
+                  className="px-6 py-3 rounded-lg bg-slate-900 border border-pink-400/60 font-['Orbitron'] font-bold text-xs uppercase tracking-widest text-pink-300 hover:text-white flex items-center gap-2 cursor-pointer"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>CONNECT WITH ANISHA</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================
+              TAB 7: RESUME VIEWER
+          ======================================================== */}
+          {currentTab === 'resume' && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-slate-900/90 border border-cyan-500/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="font-['Orbitron'] font-bold text-sm text-white">
+                    VERIFIED CURRICULUM VITAE & TELEMETRY
+                  </h3>
+                  <p className="text-xs text-gray-400 font-['Rajdhani'] mt-0.5">
+                    Official resume of Anisha Sahu (Computer Science Engineer & AI Builder).
+                  </p>
+                </div>
+                <a
+                  href={resumeUrl}
+                  download="Anisha_Sahu_Resume.pdf"
+                  className="hud-glow-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 text-xs font-mono font-bold hover:brightness-110"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download PDF</span>
                 </a>
               </div>
+
+              <div className="h-[60vh] rounded-xl overflow-hidden border border-slate-800 bg-slate-950">
+                <iframe
+                  src={resumeUrl}
+                  title="Anisha Sahu Resume"
+                  className="w-full h-full border-0"
+                />
+              </div>
             </div>
           )}
 
-          {/* TAB 5: CONTROLS & ROADMAP */}
+          {/* ========================================================
+              TAB 8: FLIGHT CONTROLS
+          ======================================================== */}
           {currentTab === 'controls' && (
-            <div className="space-y-6">
-              <div className="hud-panel p-5 rounded-sm border-sky-500/30 bg-slate-950/60">
-                <h3 className="text-base font-bold font-['Orbitron'] text-white mb-3 flex items-center gap-2">
-                  <Gamepad2 className="w-5 h-5 text-sky-400" />
-                  <span>Module 01 Flight Controls</span>
+            <div className="space-y-4">
+              <div className="p-5 rounded-xl bg-slate-900/90 border border-slate-700">
+                <h3 className="font-['Orbitron'] font-bold text-sm text-white mb-4">
+                  AVATAR & JETPACK NAVIGATION DIRECTIVE
                 </h3>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-                  <div className="p-3 rounded bg-slate-900/80 border border-slate-800 flex justify-between items-center">
-                    <span className="text-gray-300">Directional Navigation</span>
-                    <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">
-                      W, A, S, D / Arrows
-                    </span>
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex justify-between">
+                    <span className="text-cyan-300 font-bold">[W, A, S, D]</span>
+                    <span className="text-gray-300">Move Adventurer</span>
                   </div>
-                  <div className="p-3 rounded bg-slate-900/80 border border-slate-800 flex justify-between items-center">
-                    <span className="text-gray-300">Camera Mouse-Look & Zoom</span>
-                    <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">
-                      Click Scene / Scroll Wheel
-                    </span>
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex justify-between">
+                    <span className="text-cyan-300 font-bold">[Space]</span>
+                    <span className="text-gray-300">Jump / Jetpack Flight</span>
                   </div>
-                  <div className="p-3 rounded bg-slate-900/80 border border-slate-800 flex justify-between items-center">
-                    <span className="text-gray-300">Ion Thruster Lift & Flight</span>
-                    <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">
-                      Hold Space (Climb / Fly)
-                    </span>
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex justify-between">
+                    <span className="text-cyan-300 font-bold">[Shift]</span>
+                    <span className="text-gray-300">Turbo Sprint</span>
                   </div>
-                  <div className="p-3 rounded bg-slate-900/80 border border-slate-800 flex justify-between items-center">
-                    <span className="text-gray-300">Interact with Waypoint</span>
-                    <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">
-                      [E] Key / Click Prompt
-                    </span>
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex justify-between">
+                    <span className="text-cyan-300 font-bold">[Click Canvas]</span>
+                    <span className="text-gray-300">360° Mouse-Look</span>
                   </div>
-                  <div className="p-3 rounded bg-slate-900/80 border border-slate-800 flex justify-between items-center">
-                    <span className="text-gray-300">Sprint Thruster Boost</span>
-                    <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">
-                      Shift Key
-                    </span>
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex justify-between">
+                    <span className="text-cyan-300 font-bold">[Scroll Wheel]</span>
+                    <span className="text-gray-300">Camera Zoom In / Out</span>
                   </div>
-                  <div className="p-3 rounded bg-slate-900/80 border border-slate-800 flex justify-between items-center">
-                    <span className="text-gray-300">Pause / Return to Orbit</span>
-                    <span className="px-2 py-0.5 rounded bg-slate-800 text-gray-300 border border-slate-700 font-bold">
-                      Escape [Esc]
-                    </span>
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex justify-between">
+                    <span className="text-cyan-300 font-bold">[E] or Click</span>
+                    <span className="text-gray-300">Interact with Waypoints & Portals</span>
                   </div>
-                </div>
-              </div>
-
-              {/* Status of implemented vs planned features */}
-              <div className="hud-panel p-5 rounded-sm border-slate-800 bg-slate-950/60">
-                <h4 className="text-xs font-mono uppercase tracking-widest text-gray-400 mb-3">
-                  Architecture Status: Module 01 Completed vs Future Modules
-                </h4>
-                <div className="space-y-2 text-xs font-mono">
-                  <div className="flex items-center gap-2 text-emerald-300">
-                    <ShieldCheck className="w-4 h-4 shrink-0" />
-                    <span>[Implemented] Rapier 3D Physics Character & Orbital Camera</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-emerald-300">
-                    <ShieldCheck className="w-4 h-4 shrink-0" />
-                    <span>[Implemented] Quaternius Ultimate Space Kit Model Pipeline</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-emerald-300">
-                    <ShieldCheck className="w-4 h-4 shrink-0" />
-                    <span>[Implemented] 4 Proximity Interactive Waypoint Holograms</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-emerald-300">
-                    <ShieldCheck className="w-4 h-4 shrink-0" />
-                    <span>[Implemented] Accessible Direct Portfolio Fallback & Vitest Test Suite</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-400 pt-2 border-t border-slate-800">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0" />
-                    <span>[Upcoming Module 02] Procedural Planetary Landing & Terrain</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
-                    <span>[Upcoming Module 03] AI Companion Drone & Interactive Dialogue</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                    <span>[Upcoming Module 04] Asteroid Mining Mini-game & Local Storage Save</span>
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex justify-between">
+                    <span className="text-cyan-300 font-bold">[Esc]</span>
+                    <span className="text-gray-300">Close Panel / Pause Game</span>
                   </div>
                 </div>
               </div>
             </div>
           )}
-        </div>
-
-        {/* Footer Navigation */}
-        <div className="pt-4 border-t border-cyan-500/20 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0">
-          <div className="flex items-center gap-2 text-xs font-mono text-gray-400">
-            <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">
-              [ESC]
-            </span>
-            <span>Click outside or press [ESC] to resume space journey</span>
-          </div>
-          <button
-            onClick={handleExit}
-            className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black font-['Orbitron'] text-xs tracking-wider uppercase rounded-sm shadow-[0_0_20px_rgba(0,240,255,0.4)] flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-102"
-          >
-            <span>Resume Journey [Esc]</span>
-          </button>
         </div>
       </div>
     </div>

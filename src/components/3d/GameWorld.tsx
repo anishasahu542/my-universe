@@ -1,30 +1,44 @@
 import React from 'react';
 import { Physics, RigidBody, CuboidCollider } from '@react-three/rapier';
-import { Environment } from './Environment';
-import { SpaceStationModel } from './SpaceStationModel';
+import { CelestialEnvironment } from './CelestialEnvironment';
+import { FloatingArchipelago } from './FloatingArchipelago';
+import { SkillsMiniGame } from './SkillsMiniGame';
+import { AchievementsScene } from './AchievementsScene';
 import { InteractionSystem } from './InteractionSystem';
 import { PlayerController } from './PlayerController';
+import { CompanionLuna } from './CompanionLuna';
 import { CameraController } from './CameraController';
 
 export const GameWorld: React.FC = () => {
   return (
-    <Physics gravity={[0, -12, 0]}>
-      {/* Anime Sci-fi Space Environment */}
-      <Environment />
+    <Physics gravity={[0, -14, 0]}>
+      {/* Anime Celestial Sky, Drifting Clouds & Falling Sakura Petals */}
+      <CelestialEnvironment />
 
-      {/* The 3D Space Kit Asset — Full interactive world geometry with trimesh physics */}
-      <SpaceStationModel />
+      {/* Floating Islands Archipelago with Walkable Stepping Stone Bridges & Portals */}
+      <FloatingArchipelago />
 
-      {/* Interactive Waypoints anchored directly to the model's assets */}
+      {/* Skills Island Runway Mini-Game with 15 Collectible 3D Tech Orbs */}
+      <SkillsMiniGame />
+
+      {/* Achievements Island with 3D Golden Trophy Cup & Interactive Medals */}
+      <AchievementsScene />
+
+      {/* Interactive In-World Holographic Waypoints */}
       <InteractionSystem />
 
-      {/* Player Controller & Camera Follow — spawns on the Central Command Deck */}
-      <PlayerController initialPosition={[-11.9, 16.5, -12.2]} />
-      <CameraController targetDistance={8.0} />
+      {/* Third-Person Anime Adventurer Avatar */}
+      <PlayerController initialPosition={[0, 3.6, 2.0]} />
 
-      {/* Safety void catchment collider far below the planet structures */}
-      <RigidBody type="fixed" colliders={false} position={[0, -75, 0]}>
-        <CuboidCollider args={[200, 2, 350]} />
+      {/* Floating Anime Companion Luna (Real-time Guide) */}
+      <CompanionLuna />
+
+      {/* Third-Person Camera with Smooth Damping & Obstacle Avoidance */}
+      <CameraController targetDistance={6.8} />
+
+      {/* Safety Void Catchment Plane */}
+      <RigidBody type="fixed" colliders={false} position={[0, -60, 0]}>
+        <CuboidCollider args={[250, 2, 250]} />
       </RigidBody>
     </Physics>
   );

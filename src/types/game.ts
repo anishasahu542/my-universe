@@ -1,6 +1,13 @@
 export type GameStatus = 'landing' | 'loading' | 'playing' | 'paused' | 'error';
 
-export type PortfolioTab = 'about' | 'projects' | 'resume' | 'contact';
+export type PortfolioTab =
+  | 'about'
+  | 'projects'
+  | 'skills'
+  | 'achievements'
+  | 'resume'
+  | 'contact'
+  | 'ending';
 
 export type ActivePanel = PortfolioTab | 'settings' | 'controls' | null;
 
@@ -38,6 +45,10 @@ export interface ProgressionState {
   discoveredIds: string[];
   currentMission: string;
   totalWaypoints: number;
+  skillsCollected: string[];
+  achievementsUnlocked: string[];
+  currentQuest: string;
+  isEndingUnlocked: boolean;
 }
 
 export interface PlayerControlsState {
@@ -50,6 +61,36 @@ export interface PlayerControlsState {
   sprint: boolean;
 }
 
+export interface SkillOrbItem {
+  id: string;
+  name: string;
+  symbol: string;
+  category: 'Language' | 'Framework' | 'Cloud & Tool' | 'AI / Data';
+  color: string;
+  position: [number, number, number];
+  description: string;
+  proficiency: number; // 0 - 100
+  years: string;
+}
+
+export interface AchievementItem {
+  id: string;
+  title: string;
+  organization: string;
+  year: string;
+  badge: string;
+  description: string;
+  position: [number, number, number];
+  color: string;
+}
+
+export interface DialogueOption {
+  id: string;
+  question: string;
+  answer: string;
+  mood?: 'happy' | 'thinking' | 'excited' | 'proud';
+}
+
 export interface ProjectItem {
   id: string;
   title: string;
@@ -60,6 +101,8 @@ export interface ProjectItem {
   demoUrl?: string;
   githubUrl?: string;
   featured: boolean;
+  metrics?: string;
+  architecture?: string;
 }
 
 export interface ExperienceItem {

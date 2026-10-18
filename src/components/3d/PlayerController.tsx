@@ -10,14 +10,23 @@ interface PlayerControllerProps {
   initialPosition?: [number, number, number];
 }
 
-const DEFAULT_SPAWN: [number, number, number] = [-11.9, 16.5, -12.2];
+const DEFAULT_SPAWN: [number, number, number] = [0, 3.6, 2.0];
 
-export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosition = DEFAULT_SPAWN }) => {
+export const PlayerController: React.FC<PlayerControllerProps> = ({
+  initialPosition = DEFAULT_SPAWN,
+}) => {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const visualRef = useRef<THREE.Group>(null);
-  const thrusterRef = useRef<THREE.PointLight>(null);
-  const exhaustLeftRef = useRef<THREE.Mesh>(null);
-  const exhaustRightRef = useRef<THREE.Mesh>(null);
+  const thrusterGlowRef = useRef<THREE.PointLight>(null);
+
+  // Limb refs for procedural stride animation
+  const leftLegRef = useRef<THREE.Group>(null);
+  const rightLegRef = useRef<THREE.Group>(null);
+  const leftArmRef = useRef<THREE.Group>(null);
+  const rightArmRef = useRef<THREE.Group>(null);
+  const jetpackLeftRef = useRef<THREE.Mesh>(null);
+  const jetpackRightRef = useRef<THREE.Mesh>(null);
+
   const keysRef = useKeyboardControls();
   const { camera } = useThree();
   const { rapier, world } = useRapier();
@@ -25,18 +34,19 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
   // Internal state tracking
   const frameCountRef = useRef(0);
   const targetRotationYRef = useRef(0);
+  const stridePhaseRef = useRef(0);
 
   useFrame((_, delta) => {
     if (!rigidBodyRef.current) return;
 
     const store = useGameStore.getState();
     if (store.gameStatus !== 'playing') {
-      // If paused or in modal, damp velocity to zero
+      // If paused or modal active, stop linear motion
       rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
       return;
     }
 
-    // Combine keyboard keys with mobile touch buttons
+    // Input collection: keyboard + mobile touch controls
     const forward = keysRef.current.forward || store.controls.forward;
     const backward = keysRef.current.backward || store.controls.backward;
     const left = keysRef.current.left || store.controls.left;
@@ -44,7 +54,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
     const jump = keysRef.current.jump || store.controls.jump;
     const sprint = keysRef.current.sprint || store.controls.sprint;
 
-    // 1. Camera-Relative Forward & Right vectors on horizontal XZ plane
+    // 1. Camera-Relative Direction vectors on horizontal XZ plane
     const camForward = new THREE.Vector3();
     camera.getWorldDirection(camForward);
     camForward.y = 0;
@@ -56,7 +66,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
 
     const camRight = new THREE.Vector3().crossVectors(camForward, new THREE.Vector3(0, 1, 0)).normalize();
 
-    // Compute intended input movement direction
+    // Compute intended input direction
     const moveDir = new THREE.Vector3();
     if (forward) moveDir.add(camForward);
     if (backward) moveDir.sub(camForward);
@@ -71,13 +81,13 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
     const pos = rigidBodyRef.current.translation();
     const currentVel = rigidBodyRef.current.linvel();
 
-    // 2. Continuous Ground Detection via Downward Raycast
+    // 2. Downward Ground Detection Raycast
     const groundRayOrigin = { x: pos.x, y: pos.y + 0.9, z: pos.z };
     const groundRayDir = { x: 0, y: -1, z: 0 };
     const groundRay = new rapier.Ray(groundRayOrigin, groundRayDir);
     const groundHit = world.castRay(
       groundRay,
-      1.25,
+      1.35,
       true,
       undefined,
       undefined,
@@ -85,110 +95,105 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
       rigidBodyRef.current
     );
 
-    const isGrounded = groundHit !== null && groundHit.timeOfImpact <= 1.25;
+    const isGrounded = groundHit !== null && groundHit.timeOfImpact <= 1.35;
 
     // 3. Smooth Velocity Acceleration & Control
-    const baseSpeed = 9.5;
-    const speedMultiplier = sprint ? 1.65 : 1.0;
+    const baseSpeed = 8.5;
+    const speedMultiplier = sprint ? 1.6 : 1.0;
     const targetSpeed = isMoving ? baseSpeed * speedMultiplier : 0;
 
     const targetVx = moveDir.x * targetSpeed;
     const targetVz = moveDir.z * targetSpeed;
 
-    const accel = isMoving ? 20.0 : 25.0;
+    const accel = isMoving ? 22.0 : 25.0;
     const newVx = THREE.MathUtils.lerp(currentVel.x, targetVx, Math.min(1, delta * accel));
     const newVz = THREE.MathUtils.lerp(currentVel.z, targetVz, Math.min(1, delta * accel));
 
-    // 4. Starship Ion Thruster Lift & Anti-Gravity Hover (Flight Mode)
+    // 4. Adventurer Jump & Jetpack Glide
     let vy = currentVel.y;
     if (jump) {
-      // Holding Jump activates continuous upward ion thruster ascent
       if (isGrounded) {
-        vy = 8.5; // Initial lift-off burst
+        vy = 8.2; // Initial jump burst
       } else {
-        vy = Math.min(9.5, vy + delta * 26.0); // Continuous flight climb
+        vy = Math.min(8.8, vy + delta * 24.0); // Jetpack flight ascent
       }
     } else {
-      // Anti-gravity descent stabilizer: prevents plummeting at high fall speeds
-      if (vy < -9.5) {
-        vy = THREE.MathUtils.lerp(vy, -9.5, Math.min(1, delta * 6));
+      // Gentle air braking / anti-gravity descent stabilizer
+      if (vy < -12.0) {
+        vy = THREE.MathUtils.lerp(vy, -12.0, Math.min(1, delta * 6));
       }
     }
 
     // Apply linear velocity to physics body
     rigidBodyRef.current.setLinvel({ x: newVx, y: vy, z: newVz }, true);
 
-    // 5. Void boundary failsafe: if spaceship falls off the planetary structures, warp safely back
-    if (pos.y < -55) {
+    // 5. Void Catchment Failsafe: return to central plaza if fallen off
+    if (pos.y < -40) {
       rigidBodyRef.current.setTranslation({ x: DEFAULT_SPAWN[0], y: DEFAULT_SPAWN[1], z: DEFAULT_SPAWN[2] }, true);
       rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
       rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
     }
 
-    // 6. Visual Starship Flight Dynamics: Shortest-arc Yaw, Roll Banking & Pitch Tilt
+    // 6. Visual Avatar Dynamics & Procedural Animation
     if (visualRef.current) {
-      // Yaw Heading: update target heading when moving
+      // Yaw heading: character smoothly faces move direction
       if (isMoving) {
         targetRotationYRef.current = Math.atan2(moveDir.x, moveDir.z);
       }
 
-      // Shortest-arc angle normalization: eliminates 360-degree wild spin bug
+      // Shortest-arc angle normalization
       let diffY = targetRotationYRef.current - visualRef.current.rotation.y;
       while (diffY < -Math.PI) diffY += Math.PI * 2;
       while (diffY > Math.PI) diffY -= Math.PI * 2;
-      visualRef.current.rotation.y += diffY * Math.min(1, delta * 14);
+      visualRef.current.rotation.y += diffY * Math.min(1, delta * 15);
 
-      // Roll Banking: tilt ship wings when strafing or steering
-      let targetRoll = 0;
-      if (left) targetRoll += 0.32;
-      if (right) targetRoll -= 0.32;
-      if (isMoving && Math.abs(diffY) > 0.05) {
-        targetRoll += Math.max(-0.35, Math.min(0.35, diffY * 0.7));
-      }
-      visualRef.current.rotation.z = THREE.MathUtils.lerp(
-        visualRef.current.rotation.z,
-        targetRoll,
-        Math.min(1, delta * 10)
-      );
-
-      // Pitch Tilt: nose pitches down during forward cruise, rises during climb or reverse
-      let targetPitch = 0;
-      if (forward) targetPitch -= 0.12;
-      if (backward) targetPitch += 0.16;
-      if (jump) targetPitch += 0.22;
-      visualRef.current.rotation.x = THREE.MathUtils.lerp(
-        visualRef.current.rotation.x,
-        targetPitch,
-        Math.min(1, delta * 8)
-      );
-
-      // Anti-gravity floating bob
-      visualRef.current.position.y = 1.0 + Math.sin(Date.now() * 0.005) * 0.07;
-
-      // Dynamic ion thruster exhaust glow & scaling
-      const isThrusting = isMoving || jump;
-      const targetIntensity = sprint ? 6.0 : isThrusting ? 3.8 : 1.2;
-      if (thrusterRef.current) {
-        thrusterRef.current.intensity = THREE.MathUtils.lerp(
-          thrusterRef.current.intensity,
-          targetIntensity,
-          Math.min(1, delta * 15)
-        );
+      // Stride animation phase
+      if (isMoving && isGrounded) {
+        const strideSpeed = sprint ? 16.0 : 10.0;
+        stridePhaseRef.current += delta * strideSpeed;
+      } else {
+        stridePhaseRef.current = THREE.MathUtils.lerp(stridePhaseRef.current, 0, delta * 8);
       }
 
-      const exhaustScale = sprint ? 1.5 : isThrusting ? 1.15 : 0.6;
-      if (exhaustLeftRef.current && exhaustRightRef.current) {
-        exhaustLeftRef.current.scale.set(exhaustScale, exhaustScale * 1.3, exhaustScale);
-        exhaustRightRef.current.scale.set(exhaustScale, exhaustScale * 1.3, exhaustScale);
+      const legSwing = Math.sin(stridePhaseRef.current) * (isMoving ? 0.65 : 0.0);
+      const armSwing = Math.sin(stridePhaseRef.current) * (isMoving ? 0.55 : 0.0);
+
+      if (leftLegRef.current) {
+        leftLegRef.current.rotation.x = isGrounded ? legSwing : -0.3;
+      }
+      if (rightLegRef.current) {
+        rightLegRef.current.rotation.x = isGrounded ? -legSwing : -0.3;
+      }
+      if (leftArmRef.current) {
+        leftArmRef.current.rotation.x = isGrounded ? -armSwing : 0.4;
+      }
+      if (rightArmRef.current) {
+        rightArmRef.current.rotation.x = isGrounded ? armSwing : 0.4;
+      }
+
+      // Torso tilt while moving / flying
+      const pitchTilt = jump ? -0.2 : isMoving ? 0.12 : 0;
+      visualRef.current.rotation.x = THREE.MathUtils.lerp(visualRef.current.rotation.x, pitchTilt, Math.min(1, delta * 10));
+
+      // Thruster exhaust scaling
+      const isJetting = jump || (!isGrounded && vy > -2);
+      const jetScale = isJetting ? (sprint ? 1.6 : 1.2) : 0.2;
+      if (jetpackLeftRef.current && jetpackRightRef.current) {
+        jetpackLeftRef.current.scale.set(jetScale, jetScale * 1.5, jetScale);
+        jetpackRightRef.current.scale.set(jetScale, jetScale * 1.5, jetScale);
+      }
+
+      if (thrusterGlowRef.current) {
+        thrusterGlowRef.current.intensity = isJetting ? 4.0 : 0.5;
       }
     }
 
-    // 7. Update real-time 60 FPS player state for camera tracking
+    // 7. Update real-time 60 FPS playerState for camera tracking
     playerState.position.set(pos.x, pos.y, pos.z);
     playerState.velocity.set(newVx, vy, newVz);
     playerState.speed = Math.hypot(newVx, newVz);
 
-    // Throttle React DOM telemetry updates to ~4 Hz (every 15 frames)
+    // Throttle DOM state updates to ~4 Hz (every 15 frames)
     frameCountRef.current++;
     if (frameCountRef.current % 15 === 0) {
       store.updateTelemetry([pos.x, pos.y, pos.z], Number(playerState.speed.toFixed(1)));
@@ -202,103 +207,145 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
       position={initialPosition}
       enabledRotations={[false, false, false]}
       mass={1}
-      linearDamping={1.5}
+      linearDamping={2.0}
       angularDamping={1.0}
       ccd={true}
       name="player-rigidbody"
     >
-      <CapsuleCollider args={[0.55, 0.45]} position={[0, 1.0, 0]} friction={0.0} restitution={0.0} />
+      <CapsuleCollider args={[0.65, 0.4]} position={[0, 1.05, 0]} friction={0.0} restitution={0.0} />
 
-      {/* Visual Starship Avatar: Sleek Anime Sci-Fi Fighter */}
-      <group ref={visualRef} position={[0, 1.0, 0]}>
-        {/* Aerodynamic Needle Nose & Forward Hull */}
-        <mesh position={[0, 0, 0.35]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-          <coneGeometry args={[0.3, 0.9, 16]} />
-          <meshStandardMaterial color="#0E172A" metalness={0.9} roughness={0.15} />
+      {/* Visual Adventurer Avatar */}
+      <group ref={visualRef} position={[0, 0.4, 0]}>
+        {/* Torso & Cyber Jacket */}
+        <mesh position={[0, 0.72, 0]} castShadow>
+          <boxGeometry args={[0.5, 0.55, 0.3]} />
+          <meshStandardMaterial color="#0F172A" metalness={0.6} roughness={0.3} />
         </mesh>
 
-        {/* Central Fuselage Body */}
-        <mesh position={[0, 0, -0.1]} castShadow>
-          <boxGeometry args={[0.55, 0.28, 0.7]} />
-          <meshStandardMaterial color="#1E293B" metalness={0.85} roughness={0.2} />
+        {/* Anime Jacket Collar / Neon Accent */}
+        <mesh position={[0, 0.95, 0.08]}>
+          <boxGeometry args={[0.42, 0.08, 0.22]} />
+          <meshStandardMaterial color="#00F0FF" emissive="#00F0FF" emissiveIntensity={2.0} />
         </mesh>
 
-        {/* Neon Anime Cockpit Canopy Glass */}
-        <mesh position={[0, 0.15, 0.12]} rotation={[0.25, 0, 0]}>
-          <boxGeometry args={[0.3, 0.16, 0.45]} />
+        {/* Cyber Belt with Glowing Buckle */}
+        <mesh position={[0, 0.46, 0]}>
+          <boxGeometry args={[0.52, 0.08, 0.32]} />
+          <meshStandardMaterial color="#1E293B" metalness={0.8} roughness={0.2} />
+        </mesh>
+        <mesh position={[0, 0.46, 0.17]}>
+          <boxGeometry args={[0.12, 0.08, 0.04]} />
+          <meshStandardMaterial color="#A855F7" emissive="#A855F7" emissiveIntensity={3.0} />
+        </mesh>
+
+        {/* Head */}
+        <mesh position={[0, 1.25, 0]} castShadow>
+          <sphereGeometry args={[0.22, 16, 16]} />
+          <meshStandardMaterial color="#FED7AA" roughness={0.6} />
+        </mesh>
+
+        {/* Stylish Anime Hair */}
+        <mesh position={[0, 1.35, -0.04]}>
+          <sphereGeometry args={[0.25, 16, 16]} />
+          <meshStandardMaterial color="#1E1B4B" roughness={0.5} />
+        </mesh>
+        <mesh position={[0, 1.38, 0.12]} rotation={[-0.4, 0, 0]}>
+          <coneGeometry args={[0.18, 0.3, 8]} />
+          <meshStandardMaterial color="#1E1B4B" roughness={0.5} />
+        </mesh>
+
+        {/* Cyber Visor / Goggles */}
+        <mesh position={[0, 1.26, 0.18]}>
+          <boxGeometry args={[0.3, 0.1, 0.12]} />
           <meshStandardMaterial
             color="#00F0FF"
             emissive="#00F0FF"
-            emissiveIntensity={2.0}
-            roughness={0.05}
+            emissiveIntensity={3.0}
+            roughness={0.1}
           />
         </mesh>
 
-        {/* Swept Delta Wings (Port & Starboard) */}
-        <mesh position={[0.62, -0.02, -0.12]} rotation={[0, -0.28, -0.12]} castShadow>
-          <boxGeometry args={[0.8, 0.05, 0.42]} />
-          <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.25} />
-        </mesh>
-        <mesh position={[-0.62, -0.02, -0.12]} rotation={[0, 0.28, 0.12]} castShadow>
-          <boxGeometry args={[0.8, 0.05, 0.42]} />
-          <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.25} />
+        {/* Cyber Jetpack Backpack */}
+        <mesh position={[0, 0.74, -0.22]} castShadow>
+          <boxGeometry args={[0.34, 0.42, 0.16]} />
+          <meshStandardMaterial color="#1E293B" metalness={0.85} roughness={0.2} />
         </mesh>
 
-        {/* Glowing Wingtip Neon Stabilizers */}
-        <mesh position={[1.02, 0.02, -0.12]}>
-          <boxGeometry args={[0.04, 0.14, 0.38]} />
-          <meshStandardMaterial color="#00F0FF" emissive="#00F0FF" emissiveIntensity={2.5} />
+        {/* Jetpack Thruster Nozzles */}
+        <mesh position={[-0.12, 0.48, -0.22]} rotation={[Math.PI, 0, 0]}>
+          <cylinderGeometry args={[0.06, 0.08, 0.14, 12]} />
+          <meshStandardMaterial color="#0F172A" metalness={0.9} />
         </mesh>
-        <mesh position={[-1.02, 0.02, -0.12]}>
-          <boxGeometry args={[0.04, 0.14, 0.38]} />
-          <meshStandardMaterial color="#00F0FF" emissive="#00F0FF" emissiveIntensity={2.5} />
-        </mesh>
-
-        {/* Dorsal Vertical Tail Stabilizer Fin */}
-        <mesh position={[0, 0.28, -0.32]} rotation={[-0.32, 0, 0]}>
-          <boxGeometry args={[0.05, 0.35, 0.38]} />
-          <meshStandardMaterial color="#38BDF8" metalness={0.85} roughness={0.2} />
+        <mesh position={[0.12, 0.48, -0.22]} rotation={[Math.PI, 0, 0]}>
+          <cylinderGeometry args={[0.06, 0.08, 0.14, 12]} />
+          <meshStandardMaterial color="#0F172A" metalness={0.9} />
         </mesh>
 
-        {/* Floating Anti-Gravity Magnetic Induction Halo */}
-        <mesh position={[0, 0.22, -0.1]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.42, 0.025, 16, 32]} />
-          <meshStandardMaterial
-            color="#A855F7"
-            emissive="#A855F7"
-            emissiveIntensity={2.2}
-          />
-        </mesh>
-
-        {/* Dual Ion Thruster Nozzles */}
-        <mesh position={[0.2, -0.02, -0.48]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.09, 0.13, 0.22, 16]} />
-          <meshStandardMaterial color="#0F172A" metalness={0.95} roughness={0.1} />
-        </mesh>
-        <mesh position={[-0.2, -0.02, -0.48]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.09, 0.13, 0.22, 16]} />
-          <meshStandardMaterial color="#0F172A" metalness={0.95} roughness={0.1} />
-        </mesh>
-
-        {/* Animated Ion Plasma Exhaust Flames */}
-        <mesh ref={exhaustLeftRef} position={[0.2, -0.02, -0.7]} rotation={[-Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.1, 0.32, 16]} />
+        {/* Dynamic Jetpack Exhaust Flames */}
+        <mesh ref={jetpackLeftRef} position={[-0.12, 0.36, -0.22]} rotation={[Math.PI, 0, 0]}>
+          <coneGeometry args={[0.08, 0.28, 12]} />
           <meshBasicMaterial color="#00F0FF" transparent opacity={0.85} />
         </mesh>
-        <mesh ref={exhaustRightRef} position={[-0.2, -0.02, -0.7]} rotation={[-Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.1, 0.32, 16]} />
+        <mesh ref={jetpackRightRef} position={[0.12, 0.36, -0.22]} rotation={[Math.PI, 0, 0]}>
+          <coneGeometry args={[0.08, 0.28, 12]} />
           <meshBasicMaterial color="#00F0FF" transparent opacity={0.85} />
         </mesh>
 
-        {/* Thruster Dynamic Glow */}
+        {/* Jetpack Thruster Glow Light */}
         <pointLight
-          ref={thrusterRef}
-          position={[0, 0, -0.75]}
+          ref={thrusterGlowRef}
+          position={[0, 0.4, -0.3]}
           color="#00F0FF"
-          intensity={2.0}
-          distance={6}
+          intensity={1.0}
+          distance={4}
           decay={2}
         />
+
+        {/* Arms */}
+        <group ref={leftArmRef} position={[-0.34, 0.88, 0]}>
+          <mesh position={[0, -0.22, 0]} castShadow>
+            <cylinderGeometry args={[0.07, 0.06, 0.44, 8]} />
+            <meshStandardMaterial color="#1E293B" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, -0.45, 0]}>
+            <sphereGeometry args={[0.07, 8, 8]} />
+            <meshStandardMaterial color="#FED7AA" />
+          </mesh>
+        </group>
+
+        <group ref={rightArmRef} position={[0.34, 0.88, 0]}>
+          <mesh position={[0, -0.22, 0]} castShadow>
+            <cylinderGeometry args={[0.07, 0.06, 0.44, 8]} />
+            <meshStandardMaterial color="#1E293B" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, -0.45, 0]}>
+            <sphereGeometry args={[0.07, 8, 8]} />
+            <meshStandardMaterial color="#FED7AA" />
+          </mesh>
+        </group>
+
+        {/* Legs */}
+        <group ref={leftLegRef} position={[-0.16, 0.42, 0]}>
+          <mesh position={[0, -0.24, 0]} castShadow>
+            <cylinderGeometry args={[0.09, 0.07, 0.48, 8]} />
+            <meshStandardMaterial color="#0284C7" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, -0.48, 0.04]} castShadow>
+            <boxGeometry args={[0.12, 0.1, 0.22]} />
+            <meshStandardMaterial color="#0F172A" metalness={0.7} />
+          </mesh>
+        </group>
+
+        <group ref={rightLegRef} position={[0.16, 0.42, 0]}>
+          <mesh position={[0, -0.24, 0]} castShadow>
+            <cylinderGeometry args={[0.09, 0.07, 0.48, 8]} />
+            <meshStandardMaterial color="#0284C7" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, -0.48, 0.04]} castShadow>
+            <boxGeometry args={[0.12, 0.1, 0.22]} />
+            <meshStandardMaterial color="#0F172A" metalness={0.7} />
+          </mesh>
+        </group>
       </group>
     </RigidBody>
   );

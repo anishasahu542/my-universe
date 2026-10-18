@@ -2,47 +2,58 @@ import { InteractiveWaypoint } from '../types/game';
 
 export const WAYPOINTS: InteractiveWaypoint[] = [
   {
-    id: 'terminal-about',
-    title: 'Command Outpost & Bio',
-    subtitle: 'Anisha Sahu • Central Command Deck',
-    tab: 'about',
-    position: [-11.9, 15.0, -12.2],
-    radius: 4.5,
-    color: '#00F0FF', // Cyan
-    icon: 'user',
-    description: 'Central command module of the space station. Access developer profile, technical stack, and odyssey telemetry.',
-  },
-  {
-    id: 'hangar-projects',
-    title: 'Prototype Hangar & Dock',
-    subtitle: 'Orbital Docking Bay • Projects Archive',
+    id: 'projects-island',
+    title: 'PROJECTS',
+    subtitle: 'Cyber Arcade & AI Laboratory',
     tab: 'projects',
-    position: [12.8, -1.8, -3.2],
-    radius: 4.5,
-    color: '#A855F7', // Purple
+    position: [-38, 4.0, -35],
+    radius: 6.0,
+    color: '#00F0FF', // Cyan
     icon: 'briefcase',
-    description: 'Starship construction bay and research lab. Inspect RealFake Detection, Curate AI, and deployed platforms.',
+    description: 'Holographic arcade terminal showcasing AegisAI, RealFake detection, Mobile Security Agent, and KrishiMitra.',
   },
   {
-    id: 'relay-resume',
-    title: 'Observatory Relay Spire',
-    subtitle: 'High-Gain Telemetry • Resume Archive',
-    tab: 'resume',
-    position: [17.0, 16.8, -71.5],
-    radius: 5.0,
+    id: 'skills-island',
+    title: 'SKILLS',
+    subtitle: 'Sky Runway Mini-Game (15 Tech Orbs)',
+    tab: 'skills',
+    position: [38, 4.0, -35],
+    radius: 6.0,
+    color: '#A855F7', // Purple
+    icon: 'zap',
+    description: 'Interactive sky runway with floating 3D tech orbs. Run and jump to collect all 15 skills into your arsenal!',
+  },
+  {
+    id: 'about-island',
+    title: 'ABOUT ME',
+    subtitle: 'Sanctuary & Interactive Dialogue',
+    tab: 'about',
+    position: [45, 3.5, 30],
+    radius: 6.0,
     color: '#F59E0B', // Amber
-    icon: 'file-text',
-    description: 'Celestial observatory spire overlooking the planetary ridge. Access experience, education, and credentials.',
+    icon: 'user',
+    description: 'Peaceful celestial sanctuary. Converse with companion Luna to discover Anisha’s story, vision, and passions.',
   },
   {
-    id: 'transmitter-contact',
-    title: 'Orbital Satellite Dish',
-    subtitle: 'Subspace Comms Array • Contact Beacon',
+    id: 'achievements-island',
+    title: 'ACHIEVEMENTS',
+    subtitle: 'Golden Trophy & Treasure Medals',
+    tab: 'achievements',
+    position: [-42, 6.5, 32],
+    radius: 6.0,
+    color: '#EAB308', // Gold
+    icon: 'award',
+    description: 'Golden Hall of Fame featuring the giant 3D Trophy, Odisha Skills medals, BRICS honors, and hackathon awards.',
+  },
+  {
+    id: 'contact-island',
+    title: 'CONTACT',
+    subtitle: 'Sakura Blossom Garden & Comms',
     tab: 'contact',
-    position: [-14.5, -2.2, 63.5],
-    radius: 5.0,
-    color: '#10B981', // Emerald
+    position: [0, 2.5, 48],
+    radius: 6.0,
+    color: '#EC4899', // Pink
     icon: 'send',
-    description: 'Long-range satellite array and communications dish. Establish direct connection via email, phone, GitHub, or LinkedIn.',
+    description: 'Blossom garden overlooking the cosmos. Connect via LinkedIn, GitHub, email transmission, or download the full resume.',
   },
 ];

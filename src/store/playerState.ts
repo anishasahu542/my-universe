@@ -7,7 +7,7 @@ export interface PlayerState {
 }
 
 export const playerState: PlayerState = {
-  position: new THREE.Vector3(-11.9, 16.5, -12.2),
+  position: new THREE.Vector3(0, 3.6, 2.0),
   velocity: new THREE.Vector3(0, 0, 0),
   speed: 0,
 };

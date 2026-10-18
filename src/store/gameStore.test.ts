@@ -75,7 +75,7 @@ describe('GameStore State Transitions and Progression Logic', () => {
     const { startGame, setInteractionTarget, triggerCurrentInteraction } = useGameStore.getState();
     startGame();
 
-    const target = WAYPOINTS[1]; // Prototype Hangar -> projects
+    const target = WAYPOINTS.find((w) => w.tab === 'projects') || WAYPOINTS[0];
     setInteractionTarget(target, 2.5);
 
     expect(useGameStore.getState().interaction.activeTarget?.id).toBe(target.id);
