@@ -177,9 +177,11 @@ export const HUD: React.FC = () => {
           <span>•</span>
           <span><strong className="text-cyan-300">[Scroll]</strong> Zoom</span>
           <span>•</span>
-          <span><strong className="text-cyan-300">[WASD]</strong> Move</span>
+          <span><strong className="text-cyan-300">[WASD]</strong> Fly / Cruise</span>
           <span>•</span>
-          <span><strong className="text-cyan-300">[Space]</strong> Jump</span>
+          <span><strong className="text-cyan-300">[Space]</strong> Thrusters</span>
+          <span>•</span>
+          <span><strong className="text-cyan-300">[Shift]</strong> Boost</span>
           <span>•</span>
           <span><strong className="text-cyan-300">[E]</strong> Interact</span>
         </div>

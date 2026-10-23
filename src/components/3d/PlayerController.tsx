@@ -15,12 +15,13 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const visualRef = useRef<THREE.Group>(null);
   const thrusterRef = useRef<THREE.PointLight>(null);
+  const exhaustLeftRef = useRef<THREE.Mesh>(null);
+  const exhaustRightRef = useRef<THREE.Mesh>(null);
   const keysRef = useKeyboardControls();
   const { camera } = useThree();
   const { rapier, world } = useRapier();
 
   // Internal state tracking
-  const canJumpRef = useRef(true);
   const frameCountRef = useRef(0);
   const targetRotationYRef = useRef(0);
 
@@ -70,13 +71,13 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
     const currentVel = rigidBodyRef.current.linvel();
 
     // 2. Continuous Ground Detection via Downward Raycast
-    // Capsule center is at pos.y + 1.0; distance to bottom foot is 1.0m
+    // Distance to bottom contact point is 0.95m
     const groundRayOrigin = { x: pos.x, y: pos.y + 0.9, z: pos.z };
     const groundRayDir = { x: 0, y: -1, z: 0 };
     const groundRay = new rapier.Ray(groundRayOrigin, groundRayDir);
     const groundHit = world.castRay(
       groundRay,
-      1.18, // Max ray length to detect floor right under capsule
+      1.18, // Max ray length to detect floor right under spaceship
       true,
       undefined,
       undefined,
@@ -87,7 +88,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
     const isGrounded = groundHit !== null && groundHit.timeOfImpact <= 1.18;
 
     // 3. Wall Deflection & Sliding via Forward Raycast
-    // Prevents clipping through thin trimesh walls by deflecting velocity along surface tangent
+    // Prevents pushing into thin trimesh walls by deflecting velocity along surface tangent
     const effectiveMoveDir = moveDir.clone();
     if (isMoving) {
       const wallRayOrigin = { x: pos.x, y: pos.y + 0.7, z: pos.z };
@@ -95,7 +96,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
       const wallRay = new rapier.Ray(wallRayOrigin, wallRayDir);
       const wallHit = world.castRayAndGetNormal(
         wallRay,
-        0.75, // Capsule radius 0.45m + 0.3m probe distance
+        0.8, // Spaceship radius + probe distance
         true,
         undefined,
         undefined,
@@ -103,13 +104,13 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
         rigidBodyRef.current
       );
 
-      if (wallHit && wallHit.timeOfImpact < 0.75) {
+      if (wallHit && wallHit.timeOfImpact < 0.8) {
         const wallNormal = new THREE.Vector3(wallHit.normal.x, wallHit.normal.y, wallHit.normal.z);
         // Only deflect against steep obstacles/walls (normal.y < 0.7)
         if (Math.abs(wallNormal.y) < 0.7) {
           const dot = effectiveMoveDir.dot(wallNormal);
           if (dot < 0) {
-            // Subtract velocity component moving directly into the obstacle
+            // Deflect velocity away from wall into tangent plane
             effectiveMoveDir.sub(wallNormal.clone().multiplyScalar(dot));
             if (effectiveMoveDir.lengthSq() > 0.0001) {
               effectiveMoveDir.normalize();
@@ -121,31 +122,44 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
       }
     }
 
-    // 4. Smooth Velocity Acceleration & Control
-    const baseSpeed = 8.5;
-    const speedMultiplier = sprint ? 1.5 : 1.0;
+    // 4. Spaceship Cruise & Boost Speed
+    const baseSpeed = 9.5;
+    const speedMultiplier = sprint ? 1.65 : 1.0;
     const targetSpeed = isMoving ? baseSpeed * speedMultiplier : 0;
 
     const targetVx = effectiveMoveDir.x * targetSpeed;
     const targetVz = effectiveMoveDir.z * targetSpeed;
 
-    const accel = isMoving ? 18.0 : 25.0;
+    const accel = isMoving ? 20.0 : 25.0;
     const newVx = THREE.MathUtils.lerp(currentVel.x, targetVx, Math.min(1, delta * accel));
     const newVz = THREE.MathUtils.lerp(currentVel.z, targetVz, Math.min(1, delta * accel));
 
-    // 5. Vertical Jump & Gravity Thruster
+    // 5. Starship Ion Thruster Lift & Anti-Gravity Hover (Flight Dynamics)
     let vy = currentVel.y;
-    if (jump && isGrounded && canJumpRef.current) {
-      vy = 7.5;
-      canJumpRef.current = false;
-      setTimeout(() => {
-        canJumpRef.current = true;
-      }, 300);
+    if (jump) {
+      // Spacebar engages continuous anti-gravity ion thruster ascent
+      if (isGrounded) {
+        vy = 8.5; // Initial lift burst
+      } else {
+        vy = Math.min(10.0, vy + delta * 26.0); // Continuous flight climb
+      }
+    } else {
+      if (isGrounded) {
+        // Firm hover footing against the deck surface
+        if (vy > -1.0 && vy < 0.5) {
+          vy = -0.5;
+        }
+      } else {
+        // Anti-gravity descent stabilizer: smooth terminal hover glide speed
+        if (vy < -9.0) {
+          vy = THREE.MathUtils.lerp(vy, -9.0, Math.min(1, delta * 6));
+        }
+      }
     }
 
     rigidBodyRef.current.setLinvel({ x: newVx, y: vy, z: newVz }, true);
 
-    // 6. Void boundary failsafe: if player falls off the planetary structures, respawn safely
+    // 6. Void boundary failsafe: if spaceship falls off the planetary structures, warp safely back
     if (pos.y < -55) {
       rigidBodyRef.current.setTranslation({ x: DEFAULT_SPAWN[0], y: DEFAULT_SPAWN[1], z: DEFAULT_SPAWN[2] }, true);
       rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -155,31 +169,65 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
       realTimePlayer.speed = 0;
     }
 
-    // 7. Visual Avatar Turn Smoothing & Thruster Glow
+    // 7. Visual Starship Dynamics: Shortest-arc Yaw, Roll Banking & Pitch Tilt
     if (visualRef.current) {
+      // Yaw Heading: update target heading when moving
       if (isMoving && effectiveMoveDir.lengthSq() > 0.001) {
         targetRotationYRef.current = Math.atan2(effectiveMoveDir.x, effectiveMoveDir.z);
-        if (thrusterRef.current) {
-          thrusterRef.current.intensity = sprint ? 5.0 : 3.0;
-        }
-      } else {
-        if (thrusterRef.current) {
-          thrusterRef.current.intensity = 1.0;
-        }
       }
 
-      // Smooth turning towards movement heading
-      visualRef.current.rotation.y = THREE.MathUtils.lerp(
-        visualRef.current.rotation.y,
-        targetRotationYRef.current,
-        Math.min(1, delta * 12)
+      // Shortest-arc angle normalization: eliminates 360-degree wild spin
+      let diffY = targetRotationYRef.current - visualRef.current.rotation.y;
+      while (diffY < -Math.PI) diffY += Math.PI * 2;
+      while (diffY > Math.PI) diffY -= Math.PI * 2;
+      visualRef.current.rotation.y += diffY * Math.min(1, delta * 14);
+
+      // Roll Banking: tilt ship wings gracefully when strafing or turning
+      let targetRoll = 0;
+      if (left) targetRoll += 0.32;
+      if (right) targetRoll -= 0.32;
+      if (isMoving && Math.abs(diffY) > 0.05) {
+        targetRoll += Math.max(-0.35, Math.min(0.35, diffY * 0.7));
+      }
+      visualRef.current.rotation.z = THREE.MathUtils.lerp(
+        visualRef.current.rotation.z,
+        targetRoll,
+        Math.min(1, delta * 10)
       );
 
-      // Subtle float bobbing
-      visualRef.current.position.y = 1.0 + Math.sin(Date.now() * 0.005) * 0.06;
+      // Pitch Tilt: nose pitches down during forward cruise, rises during climb or reverse
+      let targetPitch = 0;
+      if (forward) targetPitch -= 0.12;
+      if (backward) targetPitch += 0.16;
+      if (jump) targetPitch += 0.22;
+      visualRef.current.rotation.x = THREE.MathUtils.lerp(
+        visualRef.current.rotation.x,
+        targetPitch,
+        Math.min(1, delta * 8)
+      );
+
+      // Anti-gravity floating hover bob
+      visualRef.current.position.y = 0.95 + Math.sin(Date.now() * 0.005) * 0.07;
+
+      // Dynamic ion thruster exhaust glow & scaling
+      const isThrusting = isMoving || jump;
+      const targetIntensity = sprint ? 6.0 : isThrusting ? 3.8 : 1.2;
+      if (thrusterRef.current) {
+        thrusterRef.current.intensity = THREE.MathUtils.lerp(
+          thrusterRef.current.intensity,
+          targetIntensity,
+          Math.min(1, delta * 15)
+        );
+      }
+
+      const exhaustScale = sprint ? 1.5 : isThrusting ? 1.15 : 0.6;
+      if (exhaustLeftRef.current && exhaustRightRef.current) {
+        exhaustLeftRef.current.scale.set(exhaustScale, exhaustScale * 1.3, exhaustScale);
+        exhaustRightRef.current.scale.set(exhaustScale, exhaustScale * 1.3, exhaustScale);
+      }
     }
 
-    // Real-time position tracking for CameraController and InteractionSystem (zero latency, zero jitter)
+    // 8. Real-time position tracking for CameraController and InteractionSystem (zero latency, zero jitter)
     const horizSpeed = Math.hypot(newVx, newVz);
     realTimePlayer.position.set(pos.x, pos.y, pos.z);
     realTimePlayer.velocity.set(newVx, vy, newVz);
@@ -199,73 +247,111 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({ initialPosit
       position={initialPosition}
       enabledRotations={[false, false, false]}
       mass={1}
-      linearDamping={1.5}
+      linearDamping={1.6}
       angularDamping={1.0}
       ccd={true}
       name="player-rigidbody"
     >
-      <CapsuleCollider args={[0.55, 0.45]} position={[0, 1.0, 0]} friction={0.0} restitution={0.0} />
+      <CapsuleCollider args={[0.45, 0.55]} position={[0, 0.95, 0]} friction={0.0} restitution={0.0} />
 
-      {/* Visual Avatar: Anime Space Explorer Probe */}
-      <group ref={visualRef} position={[0, 1.0, 0]}>
-        {/* Core Cockpit Pod */}
-        <mesh castShadow>
-          <sphereGeometry args={[0.42, 32, 16]} />
-          <meshStandardMaterial
-            color="#0E172A"
-            metalness={0.9}
-            roughness={0.15}
-          />
+      {/* Visual Starship Avatar: Sleek Anime Sci-Fi Fighter */}
+      <group ref={visualRef} position={[0, 0.95, 0]}>
+        {/* Aerodynamic Needle Nose & Forward Hull */}
+        <mesh position={[0, 0, 0.35]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <coneGeometry args={[0.3, 0.9, 16]} />
+          <meshStandardMaterial color="#0E172A" metalness={0.9} roughness={0.15} />
         </mesh>
 
-        {/* Visor / Neon anime glass cockpit */}
-        <mesh position={[0, 0.08, 0.28]} rotation={[0.2, 0, 0]}>
-          <boxGeometry args={[0.45, 0.22, 0.2]} />
+        {/* Central Fuselage Body */}
+        <mesh position={[0, 0, -0.1]} castShadow>
+          <boxGeometry args={[0.55, 0.28, 0.7]} />
+          <meshStandardMaterial color="#1E293B" metalness={0.85} roughness={0.2} />
+        </mesh>
+
+        {/* Neon Anime Cockpit Canopy Glass */}
+        <mesh position={[0, 0.15, 0.12]} rotation={[0.25, 0, 0]}>
+          <boxGeometry args={[0.3, 0.16, 0.45]} />
           <meshStandardMaterial
             color="#00F0FF"
             emissive="#00F0FF"
-            emissiveIntensity={1.8}
-            roughness={0.1}
+            emissiveIntensity={2.2}
+            roughness={0.05}
           />
         </mesh>
 
-        {/* Dual Stabilizer Wings */}
-        <mesh position={[0.45, -0.05, -0.1]} rotation={[0, 0, -0.2]}>
-          <boxGeometry args={[0.45, 0.06, 0.25]} />
-          <meshStandardMaterial color="#38BDF8" metalness={0.8} roughness={0.3} />
+        {/* Swept Delta Wings (Port & Starboard) */}
+        <mesh position={[0.62, -0.02, -0.12]} rotation={[0, -0.28, -0.12]} castShadow>
+          <boxGeometry args={[0.8, 0.05, 0.42]} />
+          <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.25} />
         </mesh>
-        <mesh position={[-0.45, -0.05, -0.1]} rotation={[0, 0, 0.2]}>
-          <boxGeometry args={[0.45, 0.06, 0.25]} />
-          <meshStandardMaterial color="#38BDF8" metalness={0.8} roughness={0.3} />
+        <mesh position={[-0.62, -0.02, -0.12]} rotation={[0, 0.28, 0.12]} castShadow>
+          <boxGeometry args={[0.8, 0.05, 0.42]} />
+          <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.25} />
         </mesh>
 
-        {/* Floating Magnetic Halo Ring */}
-        <mesh position={[0, 0.35, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.55, 0.03, 16, 32]} />
+        {/* Glowing Wingtip Neon Stabilizers */}
+        <mesh position={[1.02, 0.02, -0.12]}>
+          <boxGeometry args={[0.04, 0.14, 0.38]} />
+          <meshStandardMaterial color="#00F0FF" emissive="#00F0FF" emissiveIntensity={2.5} />
+        </mesh>
+        <mesh position={[-1.02, 0.02, -0.12]}>
+          <boxGeometry args={[0.04, 0.14, 0.38]} />
+          <meshStandardMaterial color="#00F0FF" emissive="#00F0FF" emissiveIntensity={2.5} />
+        </mesh>
+
+        {/* Dorsal Vertical Tail Stabilizer Fin */}
+        <mesh position={[0, 0.28, -0.32]} rotation={[-0.32, 0, 0]}>
+          <boxGeometry args={[0.05, 0.35, 0.38]} />
+          <meshStandardMaterial color="#38BDF8" metalness={0.85} roughness={0.2} />
+        </mesh>
+
+        {/* Floating Anti-Gravity Magnetic Induction Halo */}
+        <mesh position={[0, 0.22, -0.1]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.42, 0.025, 16, 32]} />
           <meshStandardMaterial
             color="#A855F7"
             emissive="#A855F7"
-            emissiveIntensity={2}
+            emissiveIntensity={2.2}
           />
         </mesh>
 
-        {/* Dual Ion Thrusters */}
-        <mesh position={[0.2, -0.05, -0.38]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.08, 0.12, 0.2, 16]} />
-          <meshStandardMaterial color="#1E293B" metalness={0.9} roughness={0.2} />
+        {/* Dual Wing Blaster Cannons */}
+        <mesh position={[0.45, -0.04, 0.15]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.03, 0.03, 0.4, 8]} />
+          <meshStandardMaterial color="#0F172A" metalness={0.9} roughness={0.2} />
         </mesh>
-        <mesh position={[-0.2, -0.05, -0.38]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.08, 0.12, 0.2, 16]} />
-          <meshStandardMaterial color="#1E293B" metalness={0.9} roughness={0.2} />
+        <mesh position={[-0.45, -0.04, 0.15]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.03, 0.03, 0.4, 8]} />
+          <meshStandardMaterial color="#0F172A" metalness={0.9} roughness={0.2} />
         </mesh>
 
-        {/* Thruster Flame Glow */}
+        {/* Dual Heavy Ion Thruster Nozzles */}
+        <mesh position={[0.2, -0.02, -0.48]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.09, 0.13, 0.22, 16]} />
+          <meshStandardMaterial color="#0F172A" metalness={0.95} roughness={0.1} />
+        </mesh>
+        <mesh position={[-0.2, -0.02, -0.48]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.09, 0.13, 0.22, 16]} />
+          <meshStandardMaterial color="#0F172A" metalness={0.95} roughness={0.1} />
+        </mesh>
+
+        {/* Animated Ion Plasma Exhaust Flames */}
+        <mesh ref={exhaustLeftRef} position={[0.2, -0.02, -0.7]} rotation={[-Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.1, 0.32, 16]} />
+          <meshBasicMaterial color="#00F0FF" transparent opacity={0.85} />
+        </mesh>
+        <mesh ref={exhaustRightRef} position={[-0.2, -0.02, -0.7]} rotation={[-Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.1, 0.32, 16]} />
+          <meshBasicMaterial color="#00F0FF" transparent opacity={0.85} />
+        </mesh>
+
+        {/* Thruster Dynamic Glow */}
         <pointLight
           ref={thrusterRef}
-          position={[0, -0.05, -0.55]}
+          position={[0, 0, -0.75]}
           color="#00F0FF"
-          intensity={1.5}
-          distance={4}
+          intensity={2.0}
+          distance={6}
           decay={2}
         />
       </group>
