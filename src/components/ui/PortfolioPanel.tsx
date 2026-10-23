@@ -108,11 +108,11 @@ export const PortfolioPanel: React.FC = () => {
   };
 
   const navTabs: { id: PortfolioTab | 'controls'; label: string; icon: React.ReactNode; color: string }[] = [
-    { id: 'projects', label: 'Projects Island', icon: <Briefcase className="w-4 h-4" />, color: '#00F0FF' },
+    { id: 'projects', label: 'Projects Sector', icon: <Briefcase className="w-4 h-4" />, color: '#00F0FF' },
     { id: 'skills', label: 'Skills Runway', icon: <Zap className="w-4 h-4" />, color: '#A855F7' },
     { id: 'about', label: 'About Sanctuary', icon: <User className="w-4 h-4" />, color: '#F59E0B' },
     { id: 'achievements', label: 'Hall of Fame', icon: <Award className="w-4 h-4" />, color: '#EAB308' },
-    { id: 'contact', label: 'Contact Garden', icon: <Send className="w-4 h-4" />, color: '#EC4899' },
+    { id: 'contact', label: 'Contact Oasis', icon: <Send className="w-4 h-4" />, color: '#EC4899' },
     { id: 'resume', label: 'Official CV', icon: <FileText className="w-4 h-4" />, color: '#38BDF8' },
     { id: 'ending', label: 'Celestial Ending', icon: <Star className="w-4 h-4" />, color: '#FBBF24' },
     { id: 'controls', label: 'Controls', icon: <Gamepad2 className="w-4 h-4" />, color: '#94A3B8' },
@@ -147,7 +147,7 @@ export const PortfolioPanel: React.FC = () => {
             <div>
               <h2 className="font-['Orbitron'] font-bold text-base sm:text-lg text-white tracking-wider flex items-center gap-2">
                 <span>ANISHA SAHU</span>
-                <span className="text-cyan-400 text-xs font-mono font-normal">• ARCHIPELAGO TERMINAL</span>
+                <span className="text-cyan-400 text-xs font-mono font-normal">• PLANETARY TERMINAL</span>
               </h2>
               <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
                 Interactive Celestial Codex &bull; Press [Esc] to Return
@@ -736,13 +736,13 @@ export const PortfolioPanel: React.FC = () => {
               </h3>
 
               <p className="font-['Rajdhani'] text-sm sm:text-base text-gray-200 max-w-xl mx-auto leading-relaxed mb-6">
-                “You have traversed the entire celestial archipelago of Anisha Sahu! You’ve witnessed cutting-edge AI security systems, gathered technical proficiencies along the sky runway, and explored her achievements.”
+                “You have traversed Planet Astra and explored all planetary sectors of Anisha Sahu! You’ve witnessed cutting-edge AI security systems, gathered technical proficiencies along the crystal runway, and explored her achievements.”
               </p>
 
               {/* Explorer Summary Stats */}
               <div className="grid grid-cols-3 gap-3 max-w-md mx-auto mb-8">
                 <div className="p-3 rounded-xl bg-slate-900/80 border border-cyan-500/30">
-                  <div className="text-[10px] font-mono text-gray-400">Islands Discovered</div>
+                  <div className="text-[10px] font-mono text-gray-400">Sectors Discovered</div>
                   <div className="text-lg font-mono font-bold text-cyan-300">
                     {progression.discoveredIds.length} / {progression.totalWaypoints}
                   </div>

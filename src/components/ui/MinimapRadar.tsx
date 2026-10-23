@@ -38,7 +38,7 @@ export const MinimapRadar: React.FC = () => {
         {/* Radar sweep beam */}
         <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-cyan-500/10 via-transparent to-transparent animate-spin pointer-events-none" style={{ animationDuration: '4s' }} />
 
-        {/* Island Blips */}
+        {/* Planetary Sector Blips */}
         {WAYPOINTS.map((wp) => {
           const dx = wp.position[0] - px;
           const dz = wp.position[2] - pz;
@@ -87,7 +87,7 @@ export const MinimapRadar: React.FC = () => {
             <div
               className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none"
               style={{ left: `${hx}px`, top: `${hy}px` }}
-              title="Spawn Plaza"
+              title="Central Spaceport"
             >
               <div className="w-1.5 h-1.5 rounded-full bg-white/70 shadow-[0_0_4px_#ffffff]" />
             </div>

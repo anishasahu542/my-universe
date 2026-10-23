@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text, Billboard } from '@react-three/drei';
+import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import * as THREE from 'three';
 import { SKILLS_DATA } from '../../data/skillsData';
 import { useGameStore } from '../../store/gameStore';
@@ -110,6 +111,11 @@ export const SkillsMiniGame: React.FC = () => {
 
   return (
     <group name="skills-minigame">
+      {/* Solid Walkable Runway Physics Collider */}
+      <RigidBody type="fixed" colliders={false} position={[41, 3.8, -39]} rotation={[0, -Math.PI / 4, 0]}>
+        <CuboidCollider args={[2.5, 0.4, 22]} />
+      </RigidBody>
+
       {/* Sky Runway Glowing Borders */}
       <mesh position={[41, 4.0, -39]} rotation={[0, -Math.PI / 4, 0]}>
         <boxGeometry args={[4.5, 0.15, 42]} />

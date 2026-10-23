@@ -132,7 +132,7 @@ export const CompanionLuna: React.FC = () => {
           anchorY="middle"
           maxWidth={3.0}
         >
-          {quest || 'Explore the floating islands!'}
+          {quest || 'Explore Planet Astra sectors!'}
         </Text>
       </Billboard>
 

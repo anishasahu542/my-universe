@@ -1,7 +1,7 @@
 import React from 'react';
 import { Physics, RigidBody, CuboidCollider } from '@react-three/rapier';
 import { CelestialEnvironment } from './CelestialEnvironment';
-import { FloatingArchipelago } from './FloatingArchipelago';
+import { PlanetWorld } from './PlanetWorld';
 import { SkillsMiniGame } from './SkillsMiniGame';
 import { AchievementsScene } from './AchievementsScene';
 import { InteractionSystem } from './InteractionSystem';
@@ -12,25 +12,25 @@ import { CameraController } from './CameraController';
 export const GameWorld: React.FC = () => {
   return (
     <Physics gravity={[0, -14, 0]}>
-      {/* Anime Celestial Sky, Drifting Clouds & Falling Sakura Petals */}
+      {/* Anime Celestial Sky, Planetary Rings, Gas Giant & Falling Sakura Petals */}
       <CelestialEnvironment />
 
-      {/* Floating Islands Archipelago with Walkable Stepping Stone Bridges & Portals */}
-      <FloatingArchipelago />
+      {/* Futuristic Continuous Planetary World Surface & Sectors */}
+      <PlanetWorld />
 
-      {/* Skills Island Runway Mini-Game with 15 Collectible 3D Tech Orbs */}
+      {/* Skills Sector Runway Mini-Game with 15 Collectible 3D Tech Orbs */}
       <SkillsMiniGame />
 
-      {/* Achievements Island with 3D Golden Trophy Cup & Interactive Medals */}
+      {/* Achievements Sector with 3D Golden Trophy Cup & Interactive Medals */}
       <AchievementsScene />
 
       {/* Interactive In-World Holographic Waypoints */}
       <InteractionSystem />
 
-      {/* Third-Person Anime Adventurer Avatar */}
+      {/* Third-Person Anime Adventurer Avatar on Planet Surface */}
       <PlayerController initialPosition={[0, 3.6, 2.0]} />
 
-      {/* Floating Anime Companion Luna (Real-time Guide) */}
+      {/* Floating Anime Companion Luna (Real-time Planetary Guide) */}
       <CompanionLuna />
 
       {/* Third-Person Camera with Smooth Damping & Obstacle Avoidance */}

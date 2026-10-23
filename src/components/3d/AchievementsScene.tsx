@@ -236,8 +236,8 @@ export const AchievementsScene: React.FC = () => {
 
   return (
     <group name="achievements-scene">
-      {/* 3D Golden Trophy Cup at Island Center */}
-      <GoldenTrophy position={[-42, 6.8, 32]} />
+      {/* 3D Golden Trophy Cup at Citadel Plateau Center */}
+      <GoldenTrophy position={[-42, 5.0, 32]} />
 
       {/* 5 Walkway Medals */}
       {ACHIEVEMENTS_DATA.map((item) => (

@@ -20,11 +20,11 @@ export const LandingScreen: React.FC = () => {
   const openPanel = useGameStore((s) => s.openPanel);
 
   const directLinks: { tab: PortfolioTab; label: string; desc: string; icon: React.ReactNode; color: string }[] = [
-    { tab: 'projects', label: 'Projects Island', desc: 'Cyber Arcade & AI Lab', icon: <Briefcase className="w-4 h-4" />, color: '#00F0FF' },
+    { tab: 'projects', label: 'Projects Sector', desc: 'Cyber Colony & AI Lab', icon: <Briefcase className="w-4 h-4" />, color: '#00F0FF' },
     { tab: 'skills', label: 'Skills Runway', desc: '15 Collectible 3D Orbs', icon: <Zap className="w-4 h-4" />, color: '#A855F7' },
     { tab: 'about', label: 'About Sanctuary', desc: 'Interactive Dialogue Tree', icon: <User className="w-4 h-4" />, color: '#F59E0B' },
     { tab: 'achievements', label: 'Hall of Fame', desc: '3D Trophy & State Medals', icon: <Award className="w-4 h-4" />, color: '#EAB308' },
-    { tab: 'contact', label: 'Contact Garden', desc: 'Comms & Transmissions', icon: <Send className="w-4 h-4" />, color: '#EC4899' },
+    { tab: 'contact', label: 'Contact Oasis', desc: 'Comms & Transmissions', icon: <Send className="w-4 h-4" />, color: '#EC4899' },
     { tab: 'resume', label: 'Official Resume', desc: 'Download Verified PDF', icon: <FileText className="w-4 h-4" />, color: '#38BDF8' },
   ];
 
@@ -82,7 +82,7 @@ export const LandingScreen: React.FC = () => {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
             </div>
             <p className="text-xs sm:text-sm font-['Rajdhani'] text-gray-200 mt-0.5 leading-relaxed">
-              “Greetings traveler! Welcome to Anisha’s celestial universe. Walk, jump, or jetpack between the floating islands to explore AI projects, collect skill orbs, and discover achievements!”
+              “Greetings traveler! Welcome to Planet Astra — Anisha’s interactive portfolio world. Walk, sprint, or jetpack across planetary highways to explore AI projects, collect skill orbs, and discover achievements!”
             </p>
           </div>
         </div>
@@ -100,7 +100,7 @@ export const LandingScreen: React.FC = () => {
         </div>
 
         <p className="font-['Rajdhani'] text-sm sm:text-base text-gray-300 mb-6 max-w-2xl font-medium leading-relaxed">
-          Step into a 3D playable universe. Pilot a third-person adventurer across celestial islands, discover the AegisAI security lab, collect 15 interactive tech orbs along the sky runway, and converse with companion Luna.
+          Step into a 3D playable planetary world. Pilot a third-person adventurer across planetary sectors, discover the AegisAI security lab, collect 15 interactive tech orbs along the crystal runway, and converse with companion Luna.
         </p>
 
         {/* Start Journey Primary Action */}

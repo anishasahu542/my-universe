@@ -8,7 +8,7 @@ export const ACHIEVEMENTS_DATA: AchievementItem[] = [
     year: '2021',
     badge: '🥉 Bronze Medalist',
     description: 'Awarded Bronze Medal in state-level competitive technical skills and computer engineering mastery.',
-    position: [-38, 7.2, 28],
+    position: [-38, 5.5, 28],
     color: '#F59E0B',
   },
   {
@@ -18,7 +18,7 @@ export const ACHIEVEMENTS_DATA: AchievementItem[] = [
     year: '2025',
     badge: '🥉 Repeat Medalist',
     description: 'Secured Bronze Medal honors for advanced web technologies, cloud systems, and problem-solving.',
-    position: [-40, 7.5, 30],
+    position: [-40, 5.7, 30],
     color: '#F59E0B',
   },
   {
@@ -28,7 +28,7 @@ export const ACHIEVEMENTS_DATA: AchievementItem[] = [
     year: '2026',
     badge: '🌐 Global Finalist',
     description: 'Selected to represent next-generation technical capabilities in Future Skills & Emerging Technologies.',
-    position: [-42, 8.0, 32],
+    position: [-42, 6.0, 32],
     color: '#00F0FF',
   },
   {
@@ -38,7 +38,7 @@ export const ACHIEVEMENTS_DATA: AchievementItem[] = [
     year: '2024',
     badge: '🚀 Top Innovation',
     description: 'Finalist at India’s premier national hackathon for building AI-driven assistive technology solutions.',
-    position: [-44, 7.5, 34],
+    position: [-44, 5.7, 34],
     color: '#A855F7',
   },
   {
@@ -48,7 +48,7 @@ export const ACHIEVEMENTS_DATA: AchievementItem[] = [
     year: '2025 - Present',
     badge: '⭐ Core Contributor',
     description: 'Published deep learning research papers and contributed production-grade open source AI utilities.',
-    position: [-46, 7.2, 36],
+    position: [-46, 5.5, 36],
     color: '#10B981',
   },
 ];

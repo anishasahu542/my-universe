@@ -35,19 +35,19 @@ export const QuestTracker: React.FC = () => {
 
       {/* Quest Objective Title */}
       <h4 className="text-xs sm:text-sm font-['Rajdhani'] font-bold text-white tracking-wide leading-snug">
-        {progression.currentQuest || 'Explore the celestial islands and gather Anisha’s knowledge!'}
+        {progression.currentQuest || 'Explore Planet Astra sectors and gather Anisha’s knowledge!'}
       </h4>
 
       {/* Quest Progress Counters */}
       <div className="grid grid-cols-3 gap-2 mt-3 pt-2 border-t border-slate-800">
-        {/* Islands Discovered */}
+        {/* Sectors Discovered */}
         <button
           onClick={() => openPanel('projects')}
           className="flex flex-col items-center p-1.5 rounded bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 cursor-pointer"
         >
           <div className="flex items-center gap-1 text-[10px] font-mono text-gray-400">
             <Sparkles className="w-3 h-3 text-cyan-400" />
-            <span>Islands</span>
+            <span>Sectors</span>
           </div>
           <span className="text-xs font-mono font-bold text-white mt-0.5">
             {discoveredCount} / {progression.totalWaypoints}

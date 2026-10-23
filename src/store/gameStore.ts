@@ -89,11 +89,11 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
 
   progression: {
     discoveredIds: [],
-    currentMission: 'Explore Sector 01: Discover all 5 Celestial Islands',
+    currentMission: 'Explore Planet Astra: Discover all 5 Planetary Sectors',
     totalWaypoints: WAYPOINTS.length,
     skillsCollected: [],
     achievementsUnlocked: [],
-    currentQuest: 'Talk to Luna and explore the Projects Island',
+    currentQuest: 'Talk to Luna and explore the Projects Colony',
     isEndingUnlocked: false,
   },
 
@@ -186,23 +186,23 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
       const count = newDiscovered.length;
       const total = progression.totalWaypoints;
 
-      let mission = `Explore Archipelago: Discovered ${count}/${total} Celestial Islands`;
+      let mission = `Explore Planet Astra: Discovered ${count}/${total} Planetary Sectors`;
       if (count === total) {
-        mission = 'All 5 Islands Explored! Starlit Vista Unlocked. Sector Fully Mapped.';
+        mission = 'All 5 Planetary Sectors Explored! Celestial Overlook Unlocked. Sector Fully Mapped.';
       }
 
-      // Dynamic quest update based on discovered islands
+      // Dynamic quest update based on discovered sectors
       let nextQuest = progression.currentQuest;
       if (id === 'projects-island') {
-        nextQuest = 'Travel to Skills Island and collect tech stack orbs!';
+        nextQuest = 'Follow the illuminated highway to the Skills Crystal Runway!';
       } else if (id === 'skills-island') {
-        nextQuest = 'Visit the About Sanctuary and converse with Luna.';
+        nextQuest = 'Visit the Bio-Sanctuary on the planet surface to converse with Luna.';
       } else if (id === 'about-island') {
-        nextQuest = 'Collect the medals on Achievements Island!';
+        nextQuest = 'Ascend the Golden Citadel to inspect medals of honor!';
       } else if (id === 'achievements-island') {
-        nextQuest = 'Head to Contact Blossom Island to complete your journey.';
+        nextQuest = 'Head across the planetary road to the Sakura Blossom Oasis.';
       } else if (id === 'contact-island') {
-        nextQuest = 'Journey Complete! Enjoy the celestial ending.';
+        nextQuest = 'Planetary journey complete! Enjoy the celestial ending.';
       }
 
       set({
