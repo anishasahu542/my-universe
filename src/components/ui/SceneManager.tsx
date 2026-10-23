@@ -12,25 +12,52 @@ import { MobileControls } from './MobileControls';
 export const SceneManager: React.FC = () => {
   const gameStatus = useGameStore((s) => s.gameStatus);
 
-  // Keyboard shortcut listener for global ESC key
+  // Dedicated authoritative Escape key listener with debounce to prevent double-firing
   useEffect(() => {
+    let lastEscTime = 0;
+
     const handleGlobalKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        const store = useGameStore.getState();
-        if (store.activePanel !== null) {
-          store.closePanel();
-          document.querySelector('canvas')?.focus();
-        } else if (store.gameStatus === 'playing') {
-          store.pauseGame();
-        } else if (store.gameStatus === 'paused') {
-          store.resumeGame();
-          document.querySelector('canvas')?.focus();
-        }
+      if (e.key !== 'Escape') return;
+
+      const now = performance.now();
+      if (now - lastEscTime < 250) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      lastEscTime = now;
+
+      const store = useGameStore.getState();
+
+      // 1. If viewing any modal (Portfolio, Settings), close it cleanly and return directly to game
+      if (store.activePanel !== null) {
+        e.preventDefault();
+        e.stopPropagation();
+        store.closePanel();
+        document.querySelector('canvas')?.focus();
+        return;
+      }
+
+      // 2. If playing, pause game and show pause menu
+      if (store.gameStatus === 'playing') {
+        e.preventDefault();
+        e.stopPropagation();
+        store.pauseGame();
+        return;
+      }
+
+      // 3. If paused, resume gameplay
+      if (store.gameStatus === 'paused') {
+        e.preventDefault();
+        e.stopPropagation();
+        store.resumeGame();
+        document.querySelector('canvas')?.focus();
+        return;
       }
     };
 
-    window.addEventListener('keydown', handleGlobalKey);
-    return () => window.removeEventListener('keydown', handleGlobalKey);
+    window.addEventListener('keydown', handleGlobalKey, { capture: true });
+    return () => window.removeEventListener('keydown', handleGlobalKey, { capture: true });
   }, []);
 
   return (

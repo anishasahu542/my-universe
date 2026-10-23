@@ -61,16 +61,7 @@ export function useKeyboardControls() {
             store.triggerCurrentInteraction();
           }
           break;
-        case 'Escape':
-          if (store.activePanel !== null) {
-            store.closePanel();
-          } else if (store.gameStatus === 'playing') {
-            store.pauseGame();
-          } else if (store.gameStatus === 'paused') {
-            store.resumeGame();
-          }
-          break;
-      }
+              }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {

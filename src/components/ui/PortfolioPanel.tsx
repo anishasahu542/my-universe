@@ -66,17 +66,6 @@ export const PortfolioPanel: React.FC = () => {
     document.querySelector('canvas')?.focus();
   };
 
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        handleExit();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown, { capture: true });
-    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, []);
 
   if (activePanel === null || activePanel === 'settings') {
     return null;

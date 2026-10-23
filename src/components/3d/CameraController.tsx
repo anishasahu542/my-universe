@@ -30,6 +30,7 @@ export const CameraController: React.FC<CameraControllerProps> = ({
   // Zoom distance (target & smoothed)
   const targetDistanceRef = useRef(initDist);
   const currentDistanceRef = useRef(initDist);
+  const occludedDistanceRef = useRef(initDist);
 
   // Dragging & pointer lock states
   const isDraggingRef = useRef(false);
@@ -70,7 +71,7 @@ export const CameraController: React.FC<CameraControllerProps> = ({
       if (document.pointerLockElement === dom) {
         targetYawRef.current -= e.movementX * sens;
         targetPitchRef.current += e.movementY * sens * yMultiplier;
-        targetPitchRef.current = Math.max(-0.15, Math.min(1.28, targetPitchRef.current));
+        targetPitchRef.current = Math.max(0.08, Math.min(1.25, targetPitchRef.current));
       }
     };
 
@@ -95,7 +96,7 @@ export const CameraController: React.FC<CameraControllerProps> = ({
 
       targetYawRef.current -= deltaX * sens * 1.2;
       targetPitchRef.current += deltaY * sens * 1.2 * yMultiplier;
-      targetPitchRef.current = Math.max(-0.15, Math.min(1.28, targetPitchRef.current));
+      targetPitchRef.current = Math.max(0.08, Math.min(1.25, targetPitchRef.current));
     };
 
     const handlePointerUp = (e: PointerEvent) => {
@@ -151,8 +152,7 @@ export const CameraController: React.FC<CameraControllerProps> = ({
     // Calculate spherical camera offset
     const pitch = currentPitchRef.current;
     const yaw = currentYawRef.current;
-    let distance = currentDistanceRef.current;
-
+    
     const horizontalDist = Math.cos(pitch);
     const verticalDist = Math.sin(pitch);
 
@@ -163,11 +163,12 @@ export const CameraController: React.FC<CameraControllerProps> = ({
     const camDir = new THREE.Vector3(camDirX, camDirY, camDirZ).normalize();
 
     // Camera Occlusion Avoidance Raycast:
-    // Start ray probe outside the player capsule (0.85m offset) to prevent self-collision and camera flickering
+    // Start ray probe outside the player capsule (0.85m offset) to test for solid walls
     const rayStartOffset = 0.85;
-    const maxCastDistance = Math.max(0, distance - rayStartOffset);
+    const maxCastDistance = Math.max(0.1, currentDistanceRef.current - rayStartOffset);
 
-    if (maxCastDistance > 0.2) {
+    let targetSafeDist = currentDistanceRef.current;
+    if (pitch > 0.08 && maxCastDistance > 0.3) {
       const rayOrigin = {
         x: targetLookAt.x + camDir.x * rayStartOffset,
         y: targetLookAt.y + camDir.y * rayStartOffset,
@@ -178,21 +179,27 @@ export const CameraController: React.FC<CameraControllerProps> = ({
       const hit = world.castRay(camRay, maxCastDistance, true);
 
       if (hit && hit.timeOfImpact < maxCastDistance) {
-        // Obstacle behind camera: pull in front with margin
-        const safeDist = rayStartOffset + hit.timeOfImpact - 0.35;
-        distance = Math.max(2.6, safeDist);
+        targetSafeDist = Math.max(2.8, rayStartOffset + hit.timeOfImpact - 0.35);
       }
     }
 
-    const desiredX = targetLookAt.x + camDir.x * distance;
-    const desiredY = targetLookAt.y + camDir.y * distance;
-    const desiredZ = targetLookAt.z + camDir.z * distance;
+    // Smoothly interpolate active camera distance to eliminate rapid 1-frame position jumping/flickering
+    occludedDistanceRef.current = THREE.MathUtils.lerp(
+      occludedDistanceRef.current,
+      targetSafeDist,
+      Math.min(1, delta * 14)
+    );
+
+    const activeDistance = occludedDistanceRef.current;
+    const desiredX = targetLookAt.x + camDir.x * activeDistance;
+    const desiredY = targetLookAt.y + camDir.y * activeDistance;
+    const desiredZ = targetLookAt.z + camDir.z * activeDistance;
 
     const desiredPos = new THREE.Vector3(desiredX, desiredY, desiredZ);
 
-    // Smooth camera tracking
-    currentCamPosRef.current.lerp(desiredPos, Math.min(1, delta * 15));
-    currentLookAtRef.current.lerp(targetLookAt, Math.min(1, delta * 20));
+    // Synchronized smooth camera tracking
+    currentCamPosRef.current.lerp(desiredPos, Math.min(1, delta * 16));
+    currentLookAtRef.current.lerp(targetLookAt, Math.min(1, delta * 16));
 
     camera.position.copy(currentCamPosRef.current);
     camera.lookAt(currentLookAtRef.current);

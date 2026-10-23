@@ -87,7 +87,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
     const groundRay = new rapier.Ray(groundRayOrigin, groundRayDir);
     const groundHit = world.castRay(
       groundRay,
-      1.35,
+      1.12,
       true,
       undefined,
       undefined,
@@ -95,7 +95,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
       rigidBodyRef.current
     );
 
-    const isGrounded = groundHit !== null && groundHit.timeOfImpact <= 1.35;
+    const isGrounded = groundHit !== null && groundHit.timeOfImpact <= 1.12;
 
     // 3. Smooth Velocity Acceleration & Control
     const baseSpeed = 8.5;
@@ -125,6 +125,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
     }
 
     // Apply linear velocity to physics body
+    if (isGrounded && !jump && vy > -1.0 && vy < 0.5) { vy = -0.5; }
     rigidBodyRef.current.setLinvel({ x: newVx, y: vy, z: newVz }, true);
 
     // 5. Void Catchment Failsafe: return to central plaza if fallen off
