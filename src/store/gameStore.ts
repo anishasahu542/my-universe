@@ -9,6 +9,13 @@ import {
   InteractiveWaypoint,
 } from '../types/game';
 import { WAYPOINTS } from '../data/waypointsData';
+import * as THREE from 'three';
+
+export const realTimePlayer = {
+  position: new THREE.Vector3(-11.9, 16.5, -12.2),
+  velocity: new THREE.Vector3(0, 0, 0),
+  speed: 0,
+};
 
 export interface GameStoreState {
   // Lifecycle
@@ -28,7 +35,7 @@ export interface GameStoreState {
   // Input states (accessible to virtual touch / keyboard controllers)
   controls: PlayerControlsState;
 
-  // Player telemetry
+  // Player telemetry (updated transients)
   playerCoords: [number, number, number];
   playerSpeed: number;
 
@@ -44,10 +51,6 @@ export interface GameStoreState {
   setInteractionTarget: (target: InteractiveWaypoint | null, distance?: number) => void;
   triggerCurrentInteraction: () => void;
   discoverWaypoint: (id: string) => void;
-  collectSkill: (id: string) => void;
-  unlockAchievement: (id: string) => void;
-  setQuest: (quest: string) => void;
-  unlockEnding: () => void;
   setError: (message: string | null) => void;
   setControlKey: (key: keyof PlayerControlsState, pressed: boolean) => void;
   updateTelemetry: (coords: [number, number, number], speed: number) => void;
@@ -89,17 +92,13 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
 
   progression: {
     discoveredIds: [],
-    currentMission: 'Explore Planet Astra: Discover all 5 Planetary Sectors',
+    currentMission: 'Explore Sector 01: Discover all 4 Orbital Outposts',
     totalWaypoints: WAYPOINTS.length,
-    skillsCollected: [],
-    achievementsUnlocked: [],
-    currentQuest: 'Talk to Luna and explore the Projects Colony',
-    isEndingUnlocked: false,
   },
 
   controls: INITIAL_CONTROLS,
 
-  playerCoords: [0, 3.6, 2.0],
+  playerCoords: [-11.9, 16.5, -12.2],
   playerSpeed: 0,
 
   setGameStatus: (status) => set({ gameStatus: status }),
@@ -138,6 +137,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     const wasPlaying = get().gameStatus === 'playing';
     set({
       activePanel: panel,
+      // If we open a panel while playing, keep game in playing or pause background physics
       gameStatus: wasPlaying ? 'paused' : get().gameStatus,
     });
   },
@@ -158,14 +158,15 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
 
   setInteractionTarget: (target, distance = 0) => {
     const currentTarget = get().interaction.activeTarget;
-    if (currentTarget?.id === target?.id && (!target || Math.abs(get().interaction.distance - distance) < 0.5)) {
+    // Prevent unneeded React re-renders if target hasn't changed
+    if (currentTarget?.id === target?.id && (!target || Math.abs(get().interaction.distance - distance) < 0.2)) {
       return;
     }
     set({
       interaction: {
         activeTarget: target,
         distance,
-        promptText: target ? `Press [E] to Inspect: ${target.title}` : null,
+        promptText: target ? `Press [E] or Tap to Inspect: ${target.title}` : null,
       },
     });
   },
@@ -186,23 +187,9 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
       const count = newDiscovered.length;
       const total = progression.totalWaypoints;
 
-      let mission = `Explore Planet Astra: Discovered ${count}/${total} Planetary Sectors`;
+      let mission = `Explore Sector 01: Discovered ${count}/${total} Waypoints`;
       if (count === total) {
-        mission = 'All 5 Planetary Sectors Explored! Celestial Overlook Unlocked. Sector Fully Mapped.';
-      }
-
-      // Dynamic quest update based on discovered sectors
-      let nextQuest = progression.currentQuest;
-      if (id === 'projects-island') {
-        nextQuest = 'Follow the illuminated highway to the Skills Crystal Runway!';
-      } else if (id === 'skills-island') {
-        nextQuest = 'Visit the Bio-Sanctuary on the planet surface to converse with Luna.';
-      } else if (id === 'about-island') {
-        nextQuest = 'Ascend the Golden Citadel to inspect medals of honor!';
-      } else if (id === 'achievements-island') {
-        nextQuest = 'Head across the planetary road to the Sakura Blossom Oasis.';
-      } else if (id === 'contact-island') {
-        nextQuest = 'Planetary journey complete! Enjoy the celestial ending.';
+        mission = 'Sector Fully Mapped! Odyssey Archive Unlocked.';
       }
 
       set({
@@ -210,60 +197,9 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
           ...progression,
           discoveredIds: newDiscovered,
           currentMission: mission,
-          currentQuest: nextQuest,
         },
       });
     }
-  },
-
-  collectSkill: (id: string) => {
-    const { progression } = get();
-    if (!progression.skillsCollected.includes(id)) {
-      const updated = [...progression.skillsCollected, id];
-      const count = updated.length;
-      let mission = progression.currentMission;
-      if (count === 15) {
-        mission = 'Arsenal Complete: All 15 Tech Stack Orbs Collected! ⚡';
-      }
-      set({
-        progression: {
-          ...progression,
-          skillsCollected: updated,
-          currentMission: mission,
-        },
-      });
-    }
-  },
-
-  unlockAchievement: (id: string) => {
-    const { progression } = get();
-    if (!progression.achievementsUnlocked.includes(id)) {
-      const updated = [...progression.achievementsUnlocked, id];
-      set({
-        progression: {
-          ...progression,
-          achievementsUnlocked: updated,
-        },
-      });
-    }
-  },
-
-  setQuest: (quest: string) => {
-    set((state) => ({
-      progression: {
-        ...state.progression,
-        currentQuest: quest,
-      },
-    }));
-  },
-
-  unlockEnding: () => {
-    set((state) => ({
-      progression: {
-        ...state.progression,
-        isEndingUnlocked: true,
-      },
-    }));
   },
 
   setError: (message) => {
@@ -286,23 +222,23 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
   },
 
   updateTelemetry: (coords, speed) => {
+    // Only update if difference is noticeable to avoid React cascade
     set({ playerCoords: coords, playerSpeed: speed });
   },
 
   resetProgress: () => {
+    realTimePlayer.position.set(-11.9, 16.5, -12.2);
+    realTimePlayer.velocity.set(0, 0, 0);
+    realTimePlayer.speed = 0;
     set({
       progression: {
         discoveredIds: [],
-        currentMission: 'Explore Sector 01: Discover all 5 Celestial Islands',
+        currentMission: 'Explore Sector 01: Discover all 4 Orbital Outposts',
         totalWaypoints: WAYPOINTS.length,
-        skillsCollected: [],
-        achievementsUnlocked: [],
-        currentQuest: 'Talk to Luna and explore the Projects Island',
-        isEndingUnlocked: false,
       },
       activePanel: null,
       gameStatus: 'landing',
-      playerCoords: [0, 3.6, 2.0],
+      playerCoords: [-11.9, 16.5, -12.2],
     });
   },
 }));

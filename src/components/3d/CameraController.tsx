@@ -2,8 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useRapier } from '@react-three/rapier';
 import * as THREE from 'three';
-import { useGameStore } from '../../store/gameStore';
-import { playerState } from '../../store/playerState';
+import { useGameStore, realTimePlayer } from '../../store/gameStore';
 
 interface CameraControllerProps {
   initialDistance?: number;
@@ -37,8 +36,8 @@ export const CameraController: React.FC<CameraControllerProps> = ({
   const lastMousePosRef = useRef({ x: 0, y: 0 });
 
   // Camera lerp vectors
-  const currentCamPosRef = useRef(new THREE.Vector3(0, 7.5, 9.5));
-  const currentLookAtRef = useRef(new THREE.Vector3(0, 4.2, 2.0));
+  const currentCamPosRef = useRef(new THREE.Vector3(-11.9, 22, -4));
+  const currentLookAtRef = useRef(new THREE.Vector3(-11.9, 17.5, -12.2));
 
   // Release pointer lock when game is paused or modal panel is opened
   useEffect(() => {
@@ -134,12 +133,9 @@ export const CameraController: React.FC<CameraControllerProps> = ({
   }, [gl, settings.mouseSensitivity, settings.invertY]);
 
   useFrame((_, delta) => {
-    // 60 FPS synchronous target tracking without React state lag
-    const targetLookAt = new THREE.Vector3(
-      playerState.position.x,
-      playerState.position.y + 1.2,
-      playerState.position.z
-    );
+    // Read real-time player position on every frame (eliminates position lag & frame drops)
+    const playerPos = realTimePlayer.position;
+    const targetLookAt = new THREE.Vector3(playerPos.x, playerPos.y + 1.2, playerPos.z);
 
     // Smoothly interpolate angles and zoom distance
     const angleLerp = Math.min(1, delta * 18);
@@ -152,7 +148,7 @@ export const CameraController: React.FC<CameraControllerProps> = ({
     // Calculate spherical camera offset
     const pitch = currentPitchRef.current;
     const yaw = currentYawRef.current;
-    
+
     const horizontalDist = Math.cos(pitch);
     const verticalDist = Math.sin(pitch);
 
@@ -163,7 +159,7 @@ export const CameraController: React.FC<CameraControllerProps> = ({
     const camDir = new THREE.Vector3(camDirX, camDirY, camDirZ).normalize();
 
     // Camera Occlusion Avoidance Raycast:
-    // Start ray probe outside the player capsule (0.85m offset) to test for solid walls
+    // Probe starts outside player avatar (0.85m offset) to prevent self-collision
     const rayStartOffset = 0.85;
     const maxCastDistance = Math.max(0.1, currentDistanceRef.current - rayStartOffset);
 
@@ -183,7 +179,7 @@ export const CameraController: React.FC<CameraControllerProps> = ({
       }
     }
 
-    // Smoothly interpolate active camera distance to eliminate rapid 1-frame position jumping/flickering
+    // Smoothly interpolate occluded distance to eliminate sudden 1-frame distance jumps/flickering
     occludedDistanceRef.current = THREE.MathUtils.lerp(
       occludedDistanceRef.current,
       targetSafeDist,

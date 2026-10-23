@@ -1,44 +1,30 @@
 import React from 'react';
 import { Physics, RigidBody, CuboidCollider } from '@react-three/rapier';
-import { CelestialEnvironment } from './CelestialEnvironment';
-import { PlanetWorld } from './PlanetWorld';
-import { SkillsMiniGame } from './SkillsMiniGame';
-import { AchievementsScene } from './AchievementsScene';
+import { Environment } from './Environment';
+import { SpaceStationModel } from './SpaceStationModel';
 import { InteractionSystem } from './InteractionSystem';
 import { PlayerController } from './PlayerController';
-import { CompanionLuna } from './CompanionLuna';
 import { CameraController } from './CameraController';
 
 export const GameWorld: React.FC = () => {
   return (
-    <Physics gravity={[0, -14, 0]}>
-      {/* Anime Celestial Sky, Planetary Rings, Gas Giant & Falling Sakura Petals */}
-      <CelestialEnvironment />
+    <Physics gravity={[0, -12, 0]}>
+      {/* Anime Sci-fi Space Environment */}
+      <Environment />
 
-      {/* Futuristic Continuous Planetary World Surface & Sectors */}
-      <PlanetWorld />
+      {/* The 3D Space Kit Asset — Full interactive world geometry with trimesh physics */}
+      <SpaceStationModel />
 
-      {/* Skills Sector Runway Mini-Game with 15 Collectible 3D Tech Orbs */}
-      <SkillsMiniGame />
-
-      {/* Achievements Sector with 3D Golden Trophy Cup & Interactive Medals */}
-      <AchievementsScene />
-
-      {/* Interactive In-World Holographic Waypoints */}
+      {/* Interactive Waypoints anchored directly to the model's assets */}
       <InteractionSystem />
 
-      {/* Third-Person Anime Adventurer Avatar on Planet Surface */}
-      <PlayerController initialPosition={[0, 3.6, 2.0]} />
+      {/* Player Controller & Camera Follow — spawns on the Central Command Deck */}
+      <PlayerController initialPosition={[-11.9, 16.5, -12.2]} />
+      <CameraController targetDistance={8.0} />
 
-      {/* Floating Anime Companion Luna (Real-time Planetary Guide) */}
-      <CompanionLuna />
-
-      {/* Third-Person Camera with Smooth Damping & Obstacle Avoidance */}
-      <CameraController targetDistance={6.8} />
-
-      {/* Safety Void Catchment Plane */}
-      <RigidBody type="fixed" colliders={false} position={[0, -60, 0]}>
-        <CuboidCollider args={[250, 2, 250]} />
+      {/* Safety void catchment collider far below the planet structures */}
+      <RigidBody type="fixed" colliders={false} position={[0, -75, 0]}>
+        <CuboidCollider args={[200, 2, 350]} />
       </RigidBody>
     </Physics>
   );

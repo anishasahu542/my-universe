@@ -9,23 +9,6 @@ export const SettingsPanel: React.FC = () => {
   const settings = useGameStore((s) => s.settings);
   const updateSettings = useGameStore((s) => s.updateSettings);
 
-  const handleExit = () => {
-    closePanel();
-    document.querySelector('canvas')?.focus();
-  };
-
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        handleExit();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown, { capture: true });
-    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, []);
-
   if (activePanel !== 'settings') {
     return null;
   }
@@ -33,18 +16,8 @@ export const SettingsPanel: React.FC = () => {
   const qualities: GraphicsQuality[] = ['high', 'medium', 'low'];
 
   return (
-    <div
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          handleExit();
-        }
-      }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 select-none cursor-pointer"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="hud-panel p-6 sm:p-8 max-w-lg w-full border-cyan-400/50 relative overflow-y-auto max-h-[90vh] cursor-default"
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 select-none">
+      <div className="hud-panel p-6 sm:p-8 max-w-lg w-full border-cyan-400/50 relative overflow-y-auto max-h-[90vh]">
         {/* Header */}
         <div className="flex justify-between items-center pb-4 mb-6 border-b border-cyan-500/20">
           <div>
@@ -56,9 +29,8 @@ export const SettingsPanel: React.FC = () => {
             </p>
           </div>
           <button
-            onClick={handleExit}
+            onClick={closePanel}
             className="p-1.5 rounded-sm bg-slate-900 border border-slate-700 hover:border-cyan-400 text-gray-400 hover:text-white"
-            title="Close [Esc]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -187,10 +159,10 @@ export const SettingsPanel: React.FC = () => {
           </button>
 
           <button
-            onClick={handleExit}
-            className="px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold font-['Orbitron'] text-xs tracking-wider uppercase rounded-sm shadow-[0_0_15px_rgba(0,240,255,0.4)] cursor-pointer"
+            onClick={closePanel}
+            className="px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold font-['Orbitron'] text-xs tracking-wider uppercase rounded-sm shadow-[0_0_15px_rgba(0,240,255,0.4)]"
           >
-            Apply & Close [Esc]
+            Apply & Close
           </button>
         </div>
       </div>

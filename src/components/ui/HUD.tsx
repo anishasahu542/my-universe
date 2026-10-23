@@ -6,18 +6,13 @@ import {
   VolumeX,
   User,
   Briefcase,
-  Zap,
-  Award,
+  FileText,
   Send,
   Sparkles,
   Crosshair,
-  FileText,
-  Star,
 } from 'lucide-react';
 import { useGameStore } from '../../store/gameStore';
 import { PortfolioTab } from '../../types/game';
-import { MinimapRadar } from './MinimapRadar';
-import { QuestTracker } from './QuestTracker';
 
 export const HUD: React.FC = () => {
   const gameStatus = useGameStore((s) => s.gameStatus);
@@ -27,6 +22,7 @@ export const HUD: React.FC = () => {
   const updateSettings = useGameStore((s) => s.updateSettings);
 
   const interaction = useGameStore((s) => s.interaction);
+  const progression = useGameStore((s) => s.progression);
   const playerCoords = useGameStore((s) => s.playerCoords);
   const playerSpeed = useGameStore((s) => s.playerSpeed);
   const triggerCurrentInteraction = useGameStore((s) => s.triggerCurrentInteraction);
@@ -38,34 +34,44 @@ export const HUD: React.FC = () => {
   const [px, py, pz] = playerCoords;
 
   const quickNav: { tab: PortfolioTab; label: string; icon: React.ReactNode; color: string }[] = [
-    { tab: 'projects', label: 'Projects', icon: <Briefcase className="w-3.5 h-3.5" />, color: '#00F0FF' },
-    { tab: 'skills', label: 'Skills', icon: <Zap className="w-3.5 h-3.5" />, color: '#A855F7' },
-    { tab: 'about', label: 'About', icon: <User className="w-3.5 h-3.5" />, color: '#F59E0B' },
-    { tab: 'achievements', label: 'Honors', icon: <Award className="w-3.5 h-3.5" />, color: '#EAB308' },
-    { tab: 'contact', label: 'Contact', icon: <Send className="w-3.5 h-3.5" />, color: '#EC4899' },
-    { tab: 'resume', label: 'Resume', icon: <FileText className="w-3.5 h-3.5" />, color: '#38BDF8' },
-    { tab: 'ending', label: 'Ending', icon: <Star className="w-3.5 h-3.5" />, color: '#FBBF24' },
+    { tab: 'about', label: 'About', icon: <User className="w-3.5 h-3.5" />, color: '#00F0FF' },
+    { tab: 'projects', label: 'Projects', icon: <Briefcase className="w-3.5 h-3.5" />, color: '#A855F7' },
+    { tab: 'resume', label: 'Resume', icon: <FileText className="w-3.5 h-3.5" />, color: '#F59E0B' },
+    { tab: 'contact', label: 'Contact', icon: <Send className="w-3.5 h-3.5" />, color: '#10B981' },
   ];
 
   return (
-    <div className="absolute inset-0 z-20 pointer-events-none p-3 sm:p-5 flex flex-col justify-between select-none">
+    <div className="absolute inset-0 z-20 pointer-events-none p-4 sm:p-6 flex flex-col justify-between select-none">
       {/* Top Header Row */}
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-3 w-full">
-        {/* Top-Left: Minimap Radar */}
-        <div className="flex items-start gap-3">
-          <MinimapRadar />
-          <div className="hidden lg:block">
-            <QuestTracker />
+      <div className="flex justify-between items-start gap-4">
+        {/* Mission / Objective Card */}
+        <div className="hud-panel p-3 sm:p-4 rounded-sm border-cyan-500/30 max-w-xs sm:max-w-md pointer-events-auto">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            <span className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">
+              Sector 01 Objective
+            </span>
+          </div>
+          <h4 className="text-xs sm:text-sm font-['Rajdhani'] font-bold text-white tracking-wide">
+            {progression.currentMission}
+          </h4>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="w-24 bg-slate-900 h-1.5 rounded-full overflow-hidden border border-cyan-500/30">
+              <div
+                className="bg-cyan-400 h-full transition-all duration-300"
+                style={{
+                  width: `${(progression.discoveredIds.length / progression.totalWaypoints) * 100}%`,
+                }}
+              />
+            </div>
+            <span className="text-[10px] font-mono text-gray-400">
+              {progression.discoveredIds.length} / {progression.totalWaypoints}
+            </span>
           </div>
         </div>
 
-        {/* Top-Center on mobile/tablet */}
-        <div className="block lg:hidden w-full max-w-xs">
-          <QuestTracker />
-        </div>
-
-        {/* Top-Right: Quick Action Buttons & Telemetry */}
-        <div className="flex flex-col items-end gap-2 pointer-events-auto self-end sm:self-start">
+        {/* Telemetry & Quick Action Buttons */}
+        <div className="flex flex-col items-end gap-2 pointer-events-auto">
           <div className="flex items-center gap-2">
             {/* Audio Toggle Button */}
             <button
@@ -149,7 +155,7 @@ export const HUD: React.FC = () => {
       {/* Bottom Row: Direct Navigation Pills & Controls Guide */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 pointer-events-auto">
         {/* Direct Accessible Navigation (Always accessible during gameplay) */}
-        <div className="hud-panel p-1.5 sm:p-2 rounded-sm border-slate-700/80 flex flex-wrap items-center gap-1.5 bg-slate-950/80">
+        <div className="hud-panel p-2 rounded-sm border-slate-700/80 flex items-center gap-1.5 bg-slate-950/80">
           <span className="text-[10px] font-mono text-gray-400 px-2 uppercase hidden md:inline">
             Direct Nav:
           </span>
@@ -157,7 +163,7 @@ export const HUD: React.FC = () => {
             <button
               key={item.tab}
               onClick={() => openPanel(item.tab)}
-              className="hud-glow-btn flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm bg-slate-900/90 border border-slate-700/60 hover:border-cyan-400 text-xs font-mono text-gray-200 hover:text-white cursor-pointer"
+              className="hud-glow-btn flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm bg-slate-900/90 border border-slate-700/60 hover:border-cyan-400 text-xs font-mono text-gray-200 hover:text-white"
             >
               <span style={{ color: item.color }}>{item.icon}</span>
               <span className="font-medium">{item.label}</span>
@@ -173,9 +179,7 @@ export const HUD: React.FC = () => {
           <span>•</span>
           <span><strong className="text-cyan-300">[WASD]</strong> Move</span>
           <span>•</span>
-          <span><strong className="text-cyan-300">[Space]</strong> Jetpack/Fly</span>
-          <span>•</span>
-          <span><strong className="text-cyan-300">[Shift]</strong> Turbo</span>
+          <span><strong className="text-cyan-300">[Space]</strong> Jump</span>
           <span>•</span>
           <span><strong className="text-cyan-300">[E]</strong> Interact</span>
         </div>

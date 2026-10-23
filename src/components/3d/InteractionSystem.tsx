@@ -3,8 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { WAYPOINTS } from '../../data/waypointsData';
-import { useGameStore } from '../../store/gameStore';
-import { playerState } from '../../store/playerState';
+import { useGameStore, realTimePlayer } from '../../store/gameStore';
 import { InteractiveWaypoint } from '../../types/game';
 
 interface WaypointVisualProps {
@@ -133,7 +132,7 @@ export const InteractionSystem: React.FC = () => {
     const store = useGameStore.getState();
     if (store.gameStatus !== 'playing') return;
 
-    const playerPos = playerState.position;
+    const playerPos = realTimePlayer.position;
 
     let nearestWaypoint: InteractiveWaypoint | null = null;
     let minDistance = Infinity;

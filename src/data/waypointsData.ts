@@ -2,58 +2,47 @@ import { InteractiveWaypoint } from '../types/game';
 
 export const WAYPOINTS: InteractiveWaypoint[] = [
   {
-    id: 'projects-island',
-    title: 'PROJECTS',
-    subtitle: 'Cyber Colony & AI Research Lab',
-    tab: 'projects',
-    position: [-38, 4.0, -35],
-    radius: 6.5,
-    color: '#00F0FF', // Cyan
-    icon: 'briefcase',
-    description: 'Planetary AI research base showcasing AegisAI, RealFake detection, Mobile Security Agent, and KrishiMitra.',
-  },
-  {
-    id: 'skills-island',
-    title: 'SKILLS',
-    subtitle: 'Crystal Ion Runway (15 Tech Orbs)',
-    tab: 'skills',
-    position: [38, 4.0, -35],
-    radius: 6.5,
-    color: '#A855F7', // Purple
-    icon: 'zap',
-    description: 'Illuminated planetary runway with floating 3D tech orbs. Run and jump along the highway to collect all 15 skills!',
-  },
-  {
-    id: 'about-island',
-    title: 'ABOUT ME',
-    subtitle: 'Bio-Sanctuary & Dialogue Matrix',
+    id: 'terminal-about',
+    title: 'Command Outpost & Bio',
+    subtitle: 'Anisha Sahu • Central Command Deck',
     tab: 'about',
-    position: [45, 3.5, 30],
-    radius: 6.5,
-    color: '#F59E0B', // Amber
+    position: [-11.9, 15.0, -12.2],
+    radius: 4.5,
+    color: '#00F0FF', // Cyan
     icon: 'user',
-    description: 'Serene planetary bio-sanctuary with stone megaliths. Converse with companion Luna to discover Anisha’s story and vision.',
+    description: 'Central command module of the space station. Access developer profile, technical stack, and odyssey telemetry.',
   },
   {
-    id: 'achievements-island',
-    title: 'ACHIEVEMENTS',
-    subtitle: 'Golden Citadel & Trophy Plateau',
-    tab: 'achievements',
-    position: [-42, 6.5, 32],
-    radius: 6.5,
-    color: '#EAB308', // Gold
-    icon: 'award',
-    description: 'Elevated golden mesa featuring the monumental 3D Golden Trophy Cup, Odisha Skills medals, and BRICS honors.',
+    id: 'hangar-projects',
+    title: 'Prototype Hangar & Dock',
+    subtitle: 'Orbital Docking Bay • Projects Archive',
+    tab: 'projects',
+    position: [12.8, -1.8, -3.2],
+    radius: 4.5,
+    color: '#A855F7', // Purple
+    icon: 'briefcase',
+    description: 'Starship construction bay and research lab. Inspect RealFake Detection, Curate AI, and deployed platforms.',
   },
   {
-    id: 'contact-island',
-    title: 'CONTACT',
-    subtitle: 'Sakura Oasis & Orbital Comms Array',
+    id: 'relay-resume',
+    title: 'Observatory Relay Spire',
+    subtitle: 'High-Gain Telemetry • Resume Archive',
+    tab: 'resume',
+    position: [17.0, 16.8, -71.5],
+    radius: 5.0,
+    color: '#F59E0B', // Amber
+    icon: 'file-text',
+    description: 'Celestial observatory spire overlooking the planetary ridge. Access experience, education, and credentials.',
+  },
+  {
+    id: 'transmitter-contact',
+    title: 'Orbital Satellite Dish',
+    subtitle: 'Subspace Comms Array • Contact Beacon',
     tab: 'contact',
-    position: [0, 3.5, 48],
-    radius: 6.5,
-    color: '#EC4899', // Pink
+    position: [-14.5, -2.2, 63.5],
+    radius: 5.0,
+    color: '#10B981', // Emerald
     icon: 'send',
-    description: 'Planetary sakura blossom oasis with high-gain satellite array. Connect via LinkedIn, GitHub, or download official CV.',
+    description: 'Long-range satellite array and communications dish. Establish direct connection via email, phone, GitHub, or LinkedIn.',
   },
 ];
